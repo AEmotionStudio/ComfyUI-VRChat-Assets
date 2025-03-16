@@ -2,7 +2,7 @@
 
 ![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
 ![VRChat](https://img.shields.io/badge/VRChat-compatible-green)
-![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)
+![License](https://img.shields.io/badge/license-GPL--3.0-brightgreen.svg)
 
 **Display your amazing AI-generated images and videos directly in VRChat with automatic updates from ComfyUI!**
 
@@ -449,7 +449,7 @@ Both components include built-in diagnostic methods:
 
 ## 📜 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the GPL-3.0 License - see the LICENSE file for details.
 
 ## 🤝 Contributing
 
