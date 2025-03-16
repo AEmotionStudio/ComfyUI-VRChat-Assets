@@ -19,7 +19,7 @@ ComfyUI-VRChat-Assets provides a seamless pipeline to:
 > [!TIP]
 > Perfect for creating dynamic galleries and video players that automatically update with your latest AI creations!
 
-![Example setup](images/example_setup.webp)
+![Example setup](Images/example_setup.webp)
 
 ## ✨ Features
 
