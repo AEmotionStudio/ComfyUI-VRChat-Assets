@@ -6,6 +6,8 @@
 
 **Display your amazing AI-generated images and videos directly in VRChat with automatic updates from ComfyUI!**
 
+![Example setup](Images/VRChat_Live_Example.webp)
+
 > [!NOTE]
 > VR headsets are **NOT required** to use VRChat or this asset! VRChat can be played in "Desktop Mode" on any PC, and mobile support is coming soon.
 
