@@ -4,7 +4,7 @@
 ![VRChat](https://img.shields.io/badge/VRChat-compatible-green)
 ![License](https://img.shields.io/badge/license-GPL--3.0-brightgreen.svg)
 
-**Display your amazing AI-generated images and videos directly in VRChat with automatic updates from ComfyUI!**
+**Display your AI-generated images and videos directly in VRChat with automatic updates from ComfyUI!**
 
 ![Example setup](Images/VRChat_Live_Example.webp)
 
