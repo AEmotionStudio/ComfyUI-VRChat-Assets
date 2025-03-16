@@ -243,18 +243,17 @@ In your ComfyUI workflow:
    - `github_token`: Set to your personal access token
    - `github_file_path`: Set to the path for your URLs file (e.g., "image_urls.md" or "video_urls.md")
 
-![ComfyUI-DiscordSend GitHub Settings](images/discordsend_github_settings.webp)
+![ComfyUI-DiscordSend GitHub Settings](Images/Discordsend_Github_Settings.webp)
 
 #### 2. Create a GitHub Personal Access Token
 
-1. Go to GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens
+1. Go to GitHub → Settings → Developer settings → Personal access tokens → Tokens Classic
 2. Click "Generate new token"
 3. Set an appropriate expiration date
-4. Select the specific repository you want to use
-5. Under "Repository permissions," grant "Contents" Read and Write access
-6. Generate and copy the token to use in ComfyUI-DiscordSend
+4. Select Public_Repo
+6. Scroll down to generate and copy the token to use in ComfyUI-DiscordSend
 
-![GitHub Token Creation](images/github_token_creation.webp)
+![GitHub Token Creation](Images/Github_Token_Creation.webp)
 
 #### 3. Set Up Your GitHub Repository
 
