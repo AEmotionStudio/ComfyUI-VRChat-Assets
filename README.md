@@ -267,7 +267,7 @@ In your ComfyUI workflow:
 
 ComfyUI-DiscordSend includes several security measures for GitHub tokens:
 
-- Tokens are hidden from logs with [REDACTED_TOKEN] placeholders
+- Tokens are hidden from logs
 - Tokens are removed from workflow JSON files before sharing
 - Tokens are protected in error messages and tracebacks
 
