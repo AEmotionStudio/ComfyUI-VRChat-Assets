@@ -298,7 +298,7 @@ This format is perfectly compatible with ComfyUI-VRChat-Assets' URL parsing syst
 
 #### ImageLoader Component
 
-![ImageLoader Editor](images/imageloader_editor.webp)
+![ImageLoader Editor](Images/Imageloader_Editor.webp)
 
 1. Set the `GitHub Raw URL` to your Markdown file's raw URL
 2. Click `Fetch URLs from GitHub` to test your configuration
@@ -307,7 +307,7 @@ This format is perfectly compatible with ComfyUI-VRChat-Assets' URL parsing syst
 
 #### VideoURLProvider Component
 
-![VideoURLProvider Editor](images/videourlprovider_editor.webp)
+![VideoURLProvider Editor](Images/Videourlprovider_Editor.webp)
 
 1. Assign your video player (Unity or AVPro)
 2. Set the `GitHub Raw URL` to your video list's raw URL
@@ -324,7 +324,7 @@ To get the raw URL for your GitHub markdown file:
 3. Copy the URL from your browser address bar
 4. The URL should look like: `https://raw.githubusercontent.com/username/repo/branch/path/to/file.md`
 
-![Getting Raw GitHub URL](images/raw_github_url.webp)
+![Getting Raw GitHub URL](Images/Raw_Github_Url.webp)
 
 ### Runtime Controls
 
