@@ -95,7 +95,7 @@ To use this complete workflow, you need to:
 - VRChat account with at least "New User" trust rank to publish worlds
   
 > [!NOTE]
-> To publish your own VRChat worlds, you need a VRChat account that has reached at least "New User" trust rank. For more information on VRChat's trust system, see the [official VRChat documentation](https://docs.vrchat.com/docs/vrchat-community-trust-system).
+> To publish your own VRChat worlds, you need a VRChat account that has reached at least "New User" trust rank. For more information on VRChat's trust system, see the [official VRChat documentation](https://docs.vrchat.com/docs/vrchat-safety-and-trust-system).
 
 ### Using VRChat Creator Companion (Recommended)
 
@@ -136,20 +136,25 @@ To use these prefabs:
    - Download the latest release from GitHub
    - Import the package into your Unity project using one of these methods:
      - Method 1: Go to Assets > Import Package > Custom Package and select the downloaded .unitypackage file
+![Video_Display](Images/Import_Custom_Package.webp)
      - Method 2: Drag and drop the .unitypackage file into your Unity Project window
 
 2. **Drag and Drop the Prefab**
    - Locate the prefabs in the Project panel under `ComfyUI-VRChat-Assets/Prefabs/`
    - Drag your desired prefab into your scene hierarchy
+![Video_Display](Images/Prefab_Drag_Drop.webp)
 
 3. **Configure the GitHub URL**
    - Select the prefab in the hierarchy
    - In the Inspector panel, find the `GitHub Raw URL` field
    - Enter your raw GitHub URL containing the image or video URLs
+![Video_Display](Images/Github_Raw_URLs.webp)
+![Video_Display](Images/Apply_Raw_URLs.webp)
 
 4. **Generate Predefined URLs**
    - Click the `Fetch URLs from GitHub` button to test your configuration
    - Click the `Auto-Generate Predefined URLs` button to populate the URL list
+![Video_Display](Images/Fetch_URLs.webp)
 
 5. **Adjust Settings as Needed**
    - Configure update intervals, playback options, and other settings based on your preferences
