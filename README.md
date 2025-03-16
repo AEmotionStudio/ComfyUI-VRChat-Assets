@@ -23,10 +23,10 @@ ComfyUI-VRChat-Assets provides a seamless pipeline to:
 
 ## ✨ Features
 
+### 🖼️ Image Loader: `ImageLoader`
+
 ![Image_Display](Images/Image_Display.webp)
 ![Image_Display](Images/Image_Display_Animated.webp)
-
-### 🖼️ Image Loader: `ImageLoader`
 
 - Automatically fetch images from GitHub repositories
 - Support for various image formats (PNG, JPEG, WebP)
@@ -37,10 +37,10 @@ ComfyUI-VRChat-Assets provides a seamless pipeline to:
 - Configurable update intervals
 - Batch loading support for multiple images
 
+### 🎬 Video URL Provider: `VideoURLProvider`
+
 ![Video_Display](Images/Video_Display.webp)
 ![Video_Display](Images/Video_Display_Animated.webp)
-
-### 🎬 Video URL Provider: `VideoURLProvider`
 
 - Stream videos directly from Discord CDN and other sources
 - Support for both Unity Video Player and AVPro Video Player
