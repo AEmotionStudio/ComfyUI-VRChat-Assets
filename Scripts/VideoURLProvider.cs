@@ -164,8 +164,13 @@ public class VideoURLProvider : UdonSharpBehaviour
             Debug.Log($"[VideoURLProvider] Starting with {urlCount} predefined URLs");
             InitFromGeneratedUrls();
             
-            // Mark that we've started the playlist
-            _hasStartedPlaylist = true;
+            // If initialization was successful and we have videos, start the playlist
+            if (_activeUrlIndices.Length > 0)
+            {
+                Debug.Log("[VideoURLProvider] Auto-starting playlist from predefined URLs");
+                StartPlaylist();
+                _hasStartedPlaylist = true;
+            }
         }
         else
         {
@@ -928,7 +933,7 @@ public class VideoURLProvider : UdonSharpBehaviour
                 finalIndices[oldLength + i] = tempIndices[i];
                 finalCaptions[oldLength + i] = tempCaptions[i];
             }
-            
+
             _activeUrlIndices = finalIndices;
             _captions = finalCaptions;
 
