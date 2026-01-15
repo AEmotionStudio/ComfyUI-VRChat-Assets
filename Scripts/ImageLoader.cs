@@ -1,4 +1,4 @@
-﻿using UdonSharp;
+using UdonSharp;
 using UnityEngine;
 using UnityEngine.UI;
 using VRC.SDK3.Image;
@@ -99,17 +99,28 @@ public class ImageLoader : UdonSharpBehaviour
             return;
         }
         
+        // Prepare arrays for batch add
+        int[] indicesToAdd = new int[urlCount];
+        string[] captionsToAdd = new string[urlCount];
+        int countToAdd = 0;
+
         // For each available slot, populate with initial URLs
         for (int i = 0; i < urlCount; i++)
         {
             // Check if URL is valid
             if (predefinedUrls[i] != null)
             {
-                // Initialize activeUrlIndices array with valid URLs
-                AddImageIndex(i, defaultCaption);
+                indicesToAdd[countToAdd] = i;
+                captionsToAdd[countToAdd] = defaultCaption;
+                countToAdd++;
             }
         }
         
+        if (countToAdd > 0)
+        {
+            AddImageIndicesBatch(indicesToAdd, captionsToAdd, countToAdd);
+        }
+
         // Start the slideshow if we have images
         if (_activeUrlIndices.Length > 0)
         {
@@ -248,8 +259,11 @@ public class ImageLoader : UdonSharpBehaviour
         // Split the file into lines
         string[] lines = urlList.Split('\n');
         
-        bool foundNewImages = false;
-        int newImagesProcessed = 0;
+        // Prepare temporary arrays for batch addition
+        // Max possible new images is lines.Length
+        int[] tempIndices = new int[lines.Length];
+        string[] tempCaptions = new string[lines.Length];
+        int tempCount = 0;
         
         Debug.Log($"Processing URL list with {lines.Length} lines");
         
@@ -271,7 +285,7 @@ public class ImageLoader : UdonSharpBehaviour
             }
             
             // Find matching slots
-            int matchingUrlIndex = FindMatchingUrlIndex(urlStr);
+            int matchingUrlIndex = FindMatchingUrlIndex(urlStr, tempCount);
             if (matchingUrlIndex >= 0)
             {
                 // Check if this URL index is already in our active URLs
@@ -285,6 +299,19 @@ public class ImageLoader : UdonSharpBehaviour
                     }
                 }
                 
+                // Also check if we already added it in this batch
+                if (!alreadyActive)
+                {
+                    for (int i = 0; i < tempCount; i++)
+                    {
+                        if (tempIndices[i] == matchingUrlIndex)
+                        {
+                            alreadyActive = true;
+                            break;
+                        }
+                    }
+                }
+
                 if (!alreadyActive)
                 {
                     // Extract caption if available
@@ -294,11 +321,12 @@ public class ImageLoader : UdonSharpBehaviour
                         caption = defaultCaption;
                     }
                     
-                    // Add this URL index to our active list
-                    AddImageIndex(matchingUrlIndex, caption);
-                    foundNewImages = true;
-                    newImagesProcessed++;
-                    Debug.Log($"Added new image: {urlStr} (index: {matchingUrlIndex})");
+                    // Add to temp arrays
+                    tempIndices[tempCount] = matchingUrlIndex;
+                    tempCaptions[tempCount] = caption;
+                    tempCount++;
+
+                    Debug.Log($"Found new image to add: {urlStr} (index: {matchingUrlIndex})");
                 }
             }
             else
@@ -308,9 +336,11 @@ public class ImageLoader : UdonSharpBehaviour
         }
         
         // If we found new images
-        if (foundNewImages)
+        if (tempCount > 0)
         {
-            Debug.Log($"Found {newImagesProcessed} new images. Continuing current slideshow.");
+            AddImageIndicesBatch(tempIndices, tempCaptions, tempCount);
+
+            Debug.Log($"Added {tempCount} new images. Continuing current slideshow.");
             
             // If we're at the beginning, start the slideshow
             if (_currentIndex == 0 && _activeUrlIndices.Length > 0)
@@ -389,7 +419,7 @@ public class ImageLoader : UdonSharpBehaviour
         return "";
     }
     
-    private int FindMatchingUrlIndex(string urlToFind)
+    private int FindMatchingUrlIndex(string urlToFind, int additionalCount = 0)
     {
         // Exit early if we don't have predefined URLs
         if (predefinedUrls == null || predefinedUrls.Length == 0)
@@ -411,7 +441,7 @@ public class ImageLoader : UdonSharpBehaviour
         if (useGeneratedUrlData)
         {
             // Use the next available predefined URL slot (cyclical)
-            int index = _activeUrlIndices.Length % urlCount;
+            int index = (_activeUrlIndices.Length + additionalCount) % urlCount;
             
             // Ensure the predefined URL at this index exists
             if (index < predefinedUrls.Length && predefinedUrls[index] != null)
@@ -492,31 +522,39 @@ public class ImageLoader : UdonSharpBehaviour
         return _activeUrlIndices.Length % predefinedUrls.Length;
     }
     
-    private void AddImageIndex(int urlIndex, string caption)
+    private void AddImageIndicesBatch(int[] newIndicesToAdd, string[] newCaptionsToAdd, int countToAdd)
     {
-        // Extend arrays
-        int[] newIndices = new int[_activeUrlIndices.Length + 1];
-        Texture2D[] newTextures = new Texture2D[_downloadedTextures.Length + 1];
-        string[] newCaptions = new string[_captions.Length + 1];
-        
+        if (countToAdd <= 0) return;
+
+        int oldLength = _activeUrlIndices.Length;
+        int newLength = oldLength + countToAdd;
+
+        int[] newActiveIndices = new int[newLength];
+        Texture2D[] newTextures = new Texture2D[newLength];
+        string[] newCaptions = new string[newLength];
+
         // Copy existing data
-        for (int i = 0; i < _activeUrlIndices.Length; i++)
+        for (int i = 0; i < oldLength; i++)
         {
-            newIndices[i] = _activeUrlIndices[i];
+            newActiveIndices[i] = _activeUrlIndices[i];
             newTextures[i] = _downloadedTextures[i];
             newCaptions[i] = _captions[i];
         }
-        
+
         // Add new data
-        newIndices[_activeUrlIndices.Length] = urlIndex;
-        newCaptions[_captions.Length] = caption;
-        
+        for (int i = 0; i < countToAdd; i++)
+        {
+            newActiveIndices[oldLength + i] = newIndicesToAdd[i];
+            // newTextures is already initialized to nulls, which is what we want for new images
+            newCaptions[oldLength + i] = newCaptionsToAdd[i];
+        }
+
         // Update arrays
-        _activeUrlIndices = newIndices;
+        _activeUrlIndices = newActiveIndices;
         _downloadedTextures = newTextures;
         _captions = newCaptions;
-        
-        Debug.Log($"Added new image (index: {_activeUrlIndices.Length-1}, URL index: {urlIndex})");
+
+        Debug.Log($"Batch added {countToAdd} new images. Total images: {_activeUrlIndices.Length}");
     }
     
     private void TrimOldestImages(int countToRemove)
