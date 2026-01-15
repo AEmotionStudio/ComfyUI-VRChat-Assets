@@ -1,0 +1,3 @@
+## 2024-05-23 - GitHub Raw URL Validation in Unity Custom Editors
+**Learning:** Users frequently confuse standard GitHub file URLs (blob) with raw file URLs, causing runtime failures in content loaders. Immediate Mode GUI (IMGUI) in Unity allows for conditional rendering, enabling us to show "Fix it" buttons only when an error is detected.
+**Action:** When implementing input fields for URLs in Unity Inspectors, always add pattern-matching validation and, where possible, auto-fix buttons to convert user-friendly URLs into machine-friendly ones (e.g., blob -> raw). This prevents user frustration before runtime.
