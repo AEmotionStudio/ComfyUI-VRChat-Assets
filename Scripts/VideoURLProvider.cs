@@ -1029,33 +1029,8 @@ public class VideoURLProvider : UdonSharpBehaviour
         }
         
         // Last resort: find any available predefined URL
-        for (int i = 0; i < predefinedUrls.Length; i++)
-        {
-            if (predefinedUrls[i] != null)
-            {
-                // Check if this URL is already used
-                string newUrl = predefinedUrls[i].Get();
-                bool alreadyUsed = false;
-                
-                for (int j = 0; j < _activeUrlIndices.Length; j++)
-                {
-                    int existingIndex = _activeUrlIndices[j];
-                    if (existingIndex < predefinedUrls.Length && predefinedUrls[existingIndex] != null)
-                    {
-                        if (predefinedUrls[existingIndex].Get() == newUrl)
-                        {
-                            alreadyUsed = true;
-                            break;
-                        }
-                    }
-                }
-                
-                if (!alreadyUsed)
-            {
-                return i;
-                }
-            }
-        }
+        // REMOVED for security: preventing content spoofing.
+        // If the URL is not found in the predefined list, we should NOT display a random video.
         
         return -2; // No suitable index found
     }

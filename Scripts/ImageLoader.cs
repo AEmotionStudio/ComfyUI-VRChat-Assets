@@ -436,13 +436,8 @@ public class ImageLoader : UdonSharpBehaviour
         }
         
         // Last resort: find any available predefined URL
-        for (int i = 0; i < predefinedUrls.Length; i++)
-        {
-            if (predefinedUrls[i] != null)
-            {
-                return i;
-            }
-        }
+        // REMOVED for security: preventing content spoofing.
+        // If the URL is not found in the predefined list, we should NOT display a random image.
         
         return -1;
     }
