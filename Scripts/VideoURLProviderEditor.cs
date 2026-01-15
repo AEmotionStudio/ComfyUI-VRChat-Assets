@@ -110,6 +110,7 @@ public class VideoURLProviderEditor : Editor
                     .Replace("/blob/", "/");
 
                 videoProvider.githubRawUrlString = fixedUrl;
+                EditorUtility.SetDirty(videoProvider);
                 GUI.FocusControl(null); // Clear focus to update the field
                 Repaint();
             }

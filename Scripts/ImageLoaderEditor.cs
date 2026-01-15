@@ -81,6 +81,7 @@ public class ImageLoaderEditor : Editor
                     .Replace("/blob/", "/");
 
                 imageLoader.githubRawUrlString = fixedUrl;
+                EditorUtility.SetDirty(imageLoader);
                 GUI.FocusControl(null); // Clear focus to update the field
                 Repaint();
             }
