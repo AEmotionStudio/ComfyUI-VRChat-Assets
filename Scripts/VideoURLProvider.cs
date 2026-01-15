@@ -1,4 +1,4 @@
-﻿using UdonSharp;
+using UdonSharp;
 using UnityEngine;
 using UnityEngine.UI;
 using VRC.SDK3.StringLoading;
@@ -263,67 +263,64 @@ public class VideoURLProvider : UdonSharpBehaviour
         
         Debug.Log("[VideoURLProvider] Initializing from " + predefinedUrls.Length + " predefined URLs");
         
-        // Display all available URLs for debugging
-        for (int i = 0; i < predefinedUrls.Length; i++)
-        {
-            if (predefinedUrls[i] != null)
-            {
-                Debug.Log($"[VideoURLProvider] URL[{i}]: {predefinedUrls[i].Get()}");
-            }
-            else
-            {
-                Debug.Log($"[VideoURLProvider] URL[{i}]: NULL");
-            }
-        }
+        // Create a lookup set to avoid duplicates (using array because Udon)
+        // We will scan for unique valid URLs first
         
-        // Create a lookup map of URL strings to avoid duplicates
-        string[] urlStrings = new string[predefinedUrls.Length];
-        for (int i = 0; i < predefinedUrls.Length; i++)
-        {
-            if (predefinedUrls[i] != null)
-            {
-                urlStrings[i] = predefinedUrls[i].Get();
-            }
-            else
-            {
-                urlStrings[i] = "";
-            }
-        }
-        
-        // For each available slot, populate with initial URLs
+        // Since we can't use HashSet easily in all Udon environments without overhead, we'll do a two-pass approach with array
+        // Or better: temporary array of indices, checking uniqueness against that array.
+
+        int[] tempIndices = new int[urlCount];
+        int validUniqueCount = 0;
+
+        // Populate tempIndices with unique valid URLs
         for (int i = 0; i < urlCount; i++)
         {
-            // Check if URL is valid
-            if (predefinedUrls[i] != null && !string.IsNullOrEmpty(predefinedUrls[i].Get()))
-            {
-                // Check for duplicates by comparing URL strings
-                bool isDuplicate = false;
-                string currentUrl = predefinedUrls[i].Get();
-                
-                for (int j = 0; j < i; j++)
-                {
-                    // Skip null URLs
-                    if (predefinedUrls[j] == null) continue;
-                    
-                    if (urlStrings[j] == currentUrl)
-                    {
-                        isDuplicate = true;
-                        Debug.Log($"[VideoURLProvider] Skipping duplicate URL at index {i} (matches index {j}): {currentUrl}");
-                        break;
-                    }
-                }
-                
-                if (!isDuplicate)
-                {
-                    // Initialize activeUrlIndices array with valid URLs
-                    AddUrlIndex(i, defaultCaption);
-                    Debug.Log($"[VideoURLProvider] Added unique URL at index {i}: {currentUrl}");
-                }
-            }
+             if (predefinedUrls[i] != null && !string.IsNullOrEmpty(predefinedUrls[i].Get()))
+             {
+                 string currentUrl = predefinedUrls[i].Get();
+                 bool isDuplicate = false;
+
+                 // Check against already found valid URLs in this batch
+                 for (int j = 0; j < validUniqueCount; j++)
+                 {
+                     int existingIndex = tempIndices[j];
+                     if (predefinedUrls[existingIndex].Get() == currentUrl)
+                     {
+                         isDuplicate = true;
+                         break;
+                     }
+                 }
+
+                 if (!isDuplicate)
+                 {
+                     tempIndices[validUniqueCount] = i;
+                     validUniqueCount++;
+                     // Debug.Log($"[VideoURLProvider] Found unique URL at index {i}: {currentUrl}");
+                 }
+                 else
+                 {
+                     Debug.Log($"[VideoURLProvider] Skipping duplicate URL at index {i}: {currentUrl}");
+                 }
+             }
         }
         
-        // Make sure we don't have any duplicate videos in the playlist
-        RebuildUniquePlaylist();
+        // Allocate final arrays once
+        if (validUniqueCount > 0)
+        {
+            int[] newIndices = new int[validUniqueCount];
+            string[] newCaptions = new string[validUniqueCount];
+
+            for(int i = 0; i < validUniqueCount; i++)
+            {
+                newIndices[i] = tempIndices[i];
+                newCaptions[i] = defaultCaption;
+            }
+
+            _activeUrlIndices = newIndices;
+            _captions = newCaptions;
+
+            Debug.Log($"[VideoURLProvider] Initialized {validUniqueCount} unique URLs (Bulk Optimized)");
+        }
     }
     
     public void CheckForNewUrls()
@@ -733,76 +730,6 @@ public class VideoURLProvider : UdonSharpBehaviour
         }
     }
     
-    // New method to remove duplicate videos from the playlist
-    private void RebuildUniquePlaylist()
-    {
-        if (_activeUrlIndices.Length == 0) return;
-        
-        // Track which URL indices we've already added
-        bool[] added = new bool[predefinedUrls.Length];
-        
-        // First count how many unique items we'll have
-        int uniqueCount = 0;
-        for (int i = 0; i < _activeUrlIndices.Length; i++)
-        {
-            int urlIndex = _activeUrlIndices[i];
-            
-            // If we haven't counted this index yet, count it
-            if (!added[urlIndex])
-            {
-                uniqueCount++;
-                added[urlIndex] = true;
-            }
-        }
-        
-        // Reset the added array for reuse
-        for (int i = 0; i < added.Length; i++)
-        {
-            added[i] = false;
-        }
-        
-        // Create new arrays with the correct size
-        int[] newIndices = new int[uniqueCount];
-        string[] newCaptions = new string[uniqueCount];
-        
-        // Fill the arrays with unique items
-        int newIndex = 0;
-        for (int i = 0; i < _activeUrlIndices.Length; i++)
-        {
-            int urlIndex = _activeUrlIndices[i];
-            
-            // Skip this index if we've already added it
-            if (added[urlIndex]) continue;
-            
-            // Add this index to the new playlist
-            newIndices[newIndex] = urlIndex;
-            newCaptions[newIndex] = _captions[i];
-            added[urlIndex] = true;
-            newIndex++;
-        }
-        
-        // Update the playlist
-        _activeUrlIndices = newIndices;
-        _captions = newCaptions;
-        
-        // Adjust current index if needed
-        if (_currentIndex >= _activeUrlIndices.Length)
-        {
-            _currentIndex = 0;
-        }
-        
-        // Debug the rebuilt playlist
-        Debug.Log($"[VideoURLProvider] Rebuilt playlist with {_activeUrlIndices.Length} unique videos");
-        
-        // Start playback from the beginning if we haven't started yet
-        if (!_hasStartedPlaylist && _activeUrlIndices.Length > 0)
-        {
-            _currentIndex = 0;
-            StartPlaylist();
-            _hasStartedPlaylist = true;
-        }
-    }
-    
     // Helper method to trigger the InputField's submission as if Enter was pressed
     public void TriggerInputFieldSubmit()
     {
@@ -902,11 +829,13 @@ public class VideoURLProvider : UdonSharpBehaviour
         // Split the file into lines
         string[] lines = urlList.Split('\n');
         
-        bool foundNewVideos = false;
-        int newVideosProcessed = 0;
-        
         Debug.Log($"[VideoURLProvider] Processing {lines.Length} lines from URL list");
         
+        // Prepare bulk update
+        int[] tempIndices = new int[lines.Length];
+        string[] tempCaptions = new string[lines.Length];
+        int addedCount = 0;
+
         // Process each line (URL)
         foreach (string line in lines)
         {
@@ -921,6 +850,33 @@ public class VideoURLProvider : UdonSharpBehaviour
             
             // Check the return value appropriately
             if (matchingUrlIndex >= 0)
+            {
+                 // Check if this URL index is already in our active indices
+                 bool isDuplicate = false;
+                 // 1. Check existing active indices
+                 for (int j = 0; j < _activeUrlIndices.Length; j++)
+                 {
+                    if (_activeUrlIndices[j] == matchingUrlIndex)
+                    {
+                        isDuplicate = true;
+                        break;
+                    }
+                 }
+
+                 // 2. Check current batch (tempIndices)
+                 if (!isDuplicate)
+                 {
+                     for(int j = 0; j < addedCount; j++)
+                     {
+                         if(tempIndices[j] == matchingUrlIndex)
+                         {
+                             isDuplicate = true;
+                             break;
+                         }
+                     }
+                 }
+
+                if (!isDuplicate)
                 {
                     // Extract caption if available
                     string caption = ExtractCaptionFromLine(trimmedLine);
@@ -929,12 +885,14 @@ public class VideoURLProvider : UdonSharpBehaviour
                         caption = defaultCaption;
                     }
                     
-                    // Add this URL index to our active list
-                    AddUrlIndex(matchingUrlIndex, caption);
-                    foundNewVideos = true;
-                    newVideosProcessed++;
-                    Debug.Log($"[VideoURLProvider] Added new video: {urlStr} (index: {matchingUrlIndex})");
+                    // Add to batch
+                    tempIndices[addedCount] = matchingUrlIndex;
+                    tempCaptions[addedCount] = caption;
+                    addedCount++;
+
+                    Debug.Log($"[VideoURLProvider] Found new video: {urlStr} (index: {matchingUrlIndex})");
                 }
+            }
             else if (matchingUrlIndex == -1)
             {
                 // Skip this URL as it was determined to be a duplicate by FindMatchingUrlIndex
@@ -946,13 +904,35 @@ public class VideoURLProvider : UdonSharpBehaviour
             }
         }
         
-        // If we found new videos
-        if (foundNewVideos)
+        // If we found new videos, perform bulk update
+        if (addedCount > 0)
         {
-            Debug.Log($"[VideoURLProvider] Found {newVideosProcessed} new videos. Continuing current playlist.");
+            Debug.Log($"[VideoURLProvider] Bulk adding {addedCount} new videos. Allocating arrays once.");
+
+            int oldLength = _activeUrlIndices.Length;
+            int newTotal = oldLength + addedCount;
+
+            int[] finalIndices = new int[newTotal];
+            string[] finalCaptions = new string[newTotal];
+
+            // Copy old
+            for(int i = 0; i < oldLength; i++)
+            {
+                finalIndices[i] = _activeUrlIndices[i];
+                finalCaptions[i] = _captions[i];
+            }
+
+            // Copy new
+            for(int i = 0; i < addedCount; i++)
+            {
+                finalIndices[oldLength + i] = tempIndices[i];
+                finalCaptions[oldLength + i] = tempCaptions[i];
+            }
             
-            // Make sure we don't have any duplicate videos in the playlist
-            RebuildUniquePlaylist();
+            _activeUrlIndices = finalIndices;
+            _captions = finalCaptions;
+
+            Debug.Log($"[VideoURLProvider] Playlist size is now {newTotal}.");
             
             // If we haven't started the playlist yet and we have videos, start it now
             if (!_hasStartedPlaylist && _activeUrlIndices.Length > 0 && !_isChangingVideo)
@@ -1058,30 +1038,6 @@ public class VideoURLProvider : UdonSharpBehaviour
         }
         
         return -2; // No suitable index found
-    }
-    
-    private void AddUrlIndex(int urlIndex, string caption)
-    {
-        // Extend arrays
-        int[] newIndices = new int[_activeUrlIndices.Length + 1];
-        string[] newCaptions = new string[_captions.Length + 1];
-        
-        // Copy existing data
-        for (int i = 0; i < _activeUrlIndices.Length; i++)
-        {
-            newIndices[i] = _activeUrlIndices[i];
-            newCaptions[i] = _captions[i];
-        }
-        
-        // Add new data
-        newIndices[_activeUrlIndices.Length] = urlIndex;
-        newCaptions[_captions.Length] = caption;
-        
-        // Update arrays
-        _activeUrlIndices = newIndices;
-        _captions = newCaptions;
-        
-        Debug.Log($"[VideoURLProvider] Added new video (index: {_activeUrlIndices.Length-1}, URL index: {urlIndex})");
     }
     
     private void TrimOldestUrls(int countToRemove)
@@ -1540,4 +1496,4 @@ public class VideoURLProvider : UdonSharpBehaviour
         
         Debug.Log("[VideoURLProvider] Forced play of second video complete");
     }
-} 
+}
