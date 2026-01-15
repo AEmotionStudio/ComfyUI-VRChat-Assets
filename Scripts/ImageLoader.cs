@@ -285,7 +285,7 @@ public class ImageLoader : UdonSharpBehaviour
             }
             
             // Find matching slots
-            int matchingUrlIndex = FindMatchingUrlIndex(urlStr);
+            int matchingUrlIndex = FindMatchingUrlIndex(urlStr, tempCount);
             if (matchingUrlIndex >= 0)
             {
                 // Check if this URL index is already in our active URLs
@@ -419,7 +419,7 @@ public class ImageLoader : UdonSharpBehaviour
         return "";
     }
     
-    private int FindMatchingUrlIndex(string urlToFind)
+    private int FindMatchingUrlIndex(string urlToFind, int additionalCount = 0)
     {
         // Exit early if we don't have predefined URLs
         if (predefinedUrls == null || predefinedUrls.Length == 0)
@@ -441,7 +441,7 @@ public class ImageLoader : UdonSharpBehaviour
         if (useGeneratedUrlData)
         {
             // Use the next available predefined URL slot (cyclical)
-            int index = _activeUrlIndices.Length % urlCount;
+            int index = (_activeUrlIndices.Length + additionalCount) % urlCount;
             
             // Ensure the predefined URL at this index exists
             if (index < predefinedUrls.Length && predefinedUrls[index] != null)
