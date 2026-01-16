@@ -125,13 +125,13 @@ public class VideoURLProviderEditor : Editor
         EditorGUILayout.BeginHorizontal();
 
         GUI.enabled = !string.IsNullOrEmpty(videoProvider.githubRawUrlString) && !_isLoading;
-        if (GUILayout.Button("Fetch URLs from GitHub"))
+        if (GUILayout.Button(new GUIContent("Fetch URLs from GitHub", "Download and parse the list of URLs from the provided GitHub Raw URL.")))
         {
             FetchUrlsFromGitHub(videoProvider);
         }
 
         GUI.enabled = _fetchedUrls.Count > 0 && !_isLoading;
-        if (GUILayout.Button("Auto-Generate Predefined URLs"))
+        if (GUILayout.Button(new GUIContent("Auto-Generate Predefined URLs", "Create VRCUrl assets for the fetched URLs and assign them to the component.")))
         {
             AutoGeneratePredefinedUrls(videoProvider);
         }
@@ -146,7 +146,7 @@ public class VideoURLProviderEditor : Editor
         EditorGUILayout.BeginHorizontal();
         _vrcUrlsDirectory = EditorGUILayout.TextField("VRCUrls Directory", _vrcUrlsDirectory);
 
-        if (GUILayout.Button("Browse...", GUILayout.Width(80)))
+        if (GUILayout.Button(new GUIContent("Browse...", "Select a folder in your project to store the generated VRCUrl assets."), GUILayout.Width(80)))
         {
             string selectedPath = EditorUtility.OpenFolderPanel("Select VRCUrls Directory", "Assets", "");
             if (!string.IsNullOrEmpty(selectedPath))
@@ -171,7 +171,7 @@ public class VideoURLProviderEditor : Editor
         EditorGUILayout.BeginHorizontal();
 
         // Button to clear all predefined URLs
-        if (GUILayout.Button("Clear All Predefined URLs"))
+        if (GUILayout.Button(new GUIContent("Clear All Predefined URLs", "Remove all URLs from the component's list. Does not delete asset files.")))
         {
             if (EditorUtility.DisplayDialog("Clear Predefined URLs",
                 "Are you sure you want to clear all predefined URLs? This action cannot be undone.",
@@ -198,7 +198,7 @@ public class VideoURLProviderEditor : Editor
             }
         }
 
-        if (GUILayout.Button("Delete VRCUrl Files From Disk"))
+        if (GUILayout.Button(new GUIContent("Delete VRCUrl Files From Disk", "Permanently delete the generated VRCUrl asset files from the selected directory.")))
         {
             if (EditorUtility.DisplayDialog("Delete VRCUrl Assets",
                 "This will permanently delete all VRCUrl files from the '" + _vrcUrlsDirectory + "' folder.\n\nThis action cannot be undone!",
