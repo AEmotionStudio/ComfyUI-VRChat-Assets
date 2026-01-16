@@ -366,14 +366,16 @@ public class ImageLoader : UdonSharpBehaviour
     
     private string ExtractUrlFromLine(string line)
     {
+        string extractedUrl = "";
+
         // Format 1: "URL" (direct URL)
         if (line.StartsWith("http"))
         {
-            return line;
+            extractedUrl = line;
         }
         
         // Format 2: "filename.png: URL" (colon separated)
-        if (line.Contains(":"))
+        if (string.IsNullOrEmpty(extractedUrl) && line.Contains(":"))
         {
             int colonPos = line.IndexOf(":");
             if (colonPos >= 0 && colonPos < line.Length - 1)
@@ -381,19 +383,30 @@ public class ImageLoader : UdonSharpBehaviour
                 string afterColon = line.Substring(colonPos + 1).Trim();
                 if (afterColon.StartsWith("http"))
                 {
-                    return afterColon;
+                    extractedUrl = afterColon;
                 }
             }
         }
         
         // Format 3: "n. filename.png: URL" (numbered list)
-        int httpIndex = line.IndexOf("http");
-        if (httpIndex >= 0)
+        if (string.IsNullOrEmpty(extractedUrl))
         {
-            return line.Substring(httpIndex).Trim();
+            int httpIndex = line.IndexOf("http");
+            if (httpIndex >= 0)
+            {
+                extractedUrl = line.Substring(httpIndex).Trim();
+            }
+        }
+
+        // Security enhancement: Enforce HTTPS
+        // If we found a URL but it's using insecure HTTP, upgrade it
+        if (!string.IsNullOrEmpty(extractedUrl) && extractedUrl.StartsWith("http:"))
+        {
+            Debug.LogWarning($"[Security] Upgrading insecure HTTP URL to HTTPS: {extractedUrl}");
+            extractedUrl = "https:" + extractedUrl.Substring(5);
         }
         
-        return "";
+        return extractedUrl;
     }
     
     private string ExtractCaptionFromLine(string line)
