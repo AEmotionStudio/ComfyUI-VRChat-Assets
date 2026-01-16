@@ -1093,14 +1093,16 @@ public class VideoURLProvider : UdonSharpBehaviour
     
     private string ExtractUrlFromLine(string line)
     {
+        string extractedUrl = "";
+
         // Direct URL format
         if (line.StartsWith("http"))
         {
-            return line;
+            extractedUrl = line;
         }
         
         // Title: URL format
-        if (line.Contains(":"))
+        if (string.IsNullOrEmpty(extractedUrl) && line.Contains(":"))
         {
             int colonPos = line.IndexOf(":");
             if (colonPos >= 0 && colonPos < line.Length - 1)
@@ -1108,22 +1110,33 @@ public class VideoURLProvider : UdonSharpBehaviour
                 string afterColon = line.Substring(colonPos + 1).Trim();
                 if (afterColon.StartsWith("http"))
                 {
-                    return afterColon;
+                    extractedUrl = afterColon;
                 }
             }
         }
         
         // Find any URL in the line
-        int httpIndex = line.IndexOf("http");
-        if (httpIndex >= 0)
+        if (string.IsNullOrEmpty(extractedUrl))
         {
-            string substr = line.Substring(httpIndex);
-            // Attempt to find the end of the URL by looking for whitespace
-            int spaceIndex = substr.IndexOf(' ');
-            return spaceIndex > 0 ? substr.Substring(0, spaceIndex) : substr;
+            int httpIndex = line.IndexOf("http");
+            if (httpIndex >= 0)
+            {
+                string substr = line.Substring(httpIndex);
+                // Attempt to find the end of the URL by looking for whitespace
+                int spaceIndex = substr.IndexOf(' ');
+                extractedUrl = spaceIndex > 0 ? substr.Substring(0, spaceIndex) : substr;
+            }
+        }
+
+        // Security enhancement: Enforce HTTPS
+        // If we found a URL but it's using insecure HTTP, upgrade it
+        if (!string.IsNullOrEmpty(extractedUrl) && extractedUrl.StartsWith("http:"))
+        {
+            Debug.LogWarning($"[Security] Upgrading insecure HTTP URL to HTTPS: {extractedUrl}");
+            extractedUrl = "https:" + extractedUrl.Substring(5);
         }
         
-        return "";
+        return extractedUrl;
     }
     
     private string ExtractCaptionFromLine(string line)
