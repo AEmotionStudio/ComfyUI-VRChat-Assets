@@ -288,6 +288,18 @@ public class ImageLoader : UdonSharpBehaviour
             int matchingUrlIndex = FindMatchingUrlIndex(urlStr, tempCount);
             if (matchingUrlIndex >= 0)
             {
+                // Security: If we matched an HTTP URL but have an HTTPS replacement, update the predefined URL
+                // This ensures we actually load over HTTPS
+                if (predefinedUrls[matchingUrlIndex] != null)
+                {
+                    string predefUrl = predefinedUrls[matchingUrlIndex].Get();
+                    if (predefUrl.StartsWith("http:") && urlStr.StartsWith("https:"))
+                    {
+                        Debug.LogWarning($"[Security] Hot-swapping predefined URL at index {matchingUrlIndex} to HTTPS to ensure secure loading.");
+                        predefinedUrls[matchingUrlIndex] = new VRCUrl(urlStr);
+                    }
+                }
+
                 // Check if this URL index is already in our active URLs
                 bool alreadyActive = false;
                 for (int i = 0; i < _activeUrlIndices.Length; i++)
@@ -441,12 +453,26 @@ public class ImageLoader : UdonSharpBehaviour
             return -1;
         }
         
-        // First try to find an exact match
+        // First try to find an exact match or an HTTPS upgrade match
         for (int i = 0; i < predefinedUrls.Length; i++)
         {
-            if (predefinedUrls[i] != null && predefinedUrls[i].Get() == urlToFind)
+            if (predefinedUrls[i] != null)
             {
-                return i;
+                string predefUrl = predefinedUrls[i].Get();
+
+                // Exact match
+                if (predefUrl == urlToFind)
+                {
+                    return i;
+                }
+
+                // Check if upgrading the predefined URL to HTTPS matches the input (which is already HTTPS)
+                if (predefUrl.StartsWith("http:") &&
+                    urlToFind.StartsWith("https:") &&
+                    predefUrl.Substring(4) == urlToFind.Substring(5))
+                {
+                    return i;
+                }
             }
         }
         

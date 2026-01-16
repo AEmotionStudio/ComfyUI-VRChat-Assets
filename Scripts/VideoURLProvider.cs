@@ -922,6 +922,18 @@ public class VideoURLProvider : UdonSharpBehaviour
             // Check the return value appropriately
             if (matchingUrlIndex >= 0)
                 {
+                    // Security: If we matched an HTTP URL but have an HTTPS replacement, update the predefined URL
+                    // This ensures we actually load over HTTPS
+                    if (predefinedUrls[matchingUrlIndex] != null)
+                    {
+                        string predefUrl = predefinedUrls[matchingUrlIndex].Get();
+                        if (predefUrl.StartsWith("http:") && urlStr.StartsWith("https:"))
+                        {
+                            Debug.LogWarning($"[Security] Hot-swapping predefined URL at index {matchingUrlIndex} to HTTPS to ensure secure loading.");
+                            predefinedUrls[matchingUrlIndex] = new VRCUrl(urlStr);
+                        }
+                    }
+
                     // Extract caption if available
                     string caption = ExtractCaptionFromLine(trimmedLine);
                     if (string.IsNullOrEmpty(caption))
@@ -983,20 +995,34 @@ public class VideoURLProvider : UdonSharpBehaviour
         // First try to find an exact match in predefined URLs
         for (int i = 0; i < predefinedUrls.Length; i++)
         {
-            if (predefinedUrls[i] != null && predefinedUrls[i].Get() == urlToFind)
+            if (predefinedUrls[i] != null)
             {
-                // Check if this URL index is already in our active indices
-                for (int j = 0; j < _activeUrlIndices.Length; j++)
+                string predefUrl = predefinedUrls[i].Get();
+                bool isMatch = (predefUrl == urlToFind);
+
+                // Check if upgrading the predefined URL to HTTPS matches the input (which is already HTTPS)
+                if (!isMatch && predefUrl.StartsWith("http:") &&
+                    urlToFind.StartsWith("https:") &&
+                    predefUrl.Substring(4) == urlToFind.Substring(5))
                 {
-                    if (_activeUrlIndices[j] == i)
-                    {
-                        Debug.Log($"[VideoURLProvider] URL already exists in playlist at index {j}, skipping duplicate: {urlToFind}");
-                        return -1; // Return -1 to indicate we should skip adding this duplicate
-                    }
+                    isMatch = true;
                 }
-                
-                // If not already in playlist, return this index
-                return i;
+
+                if (isMatch)
+                {
+                    // Check if this URL index is already in our active indices
+                    for (int j = 0; j < _activeUrlIndices.Length; j++)
+                    {
+                        if (_activeUrlIndices[j] == i)
+                        {
+                            Debug.Log($"[VideoURLProvider] URL already exists in playlist at index {j}, skipping duplicate: {urlToFind}");
+                            return -1; // Return -1 to indicate we should skip adding this duplicate
+                        }
+                    }
+
+                    // If not already in playlist, return this index
+                    return i;
+                }
             }
         }
         
