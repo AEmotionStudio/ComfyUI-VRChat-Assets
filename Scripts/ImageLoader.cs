@@ -54,6 +54,7 @@ public class ImageLoader : UdonSharpBehaviour
     private string[] _captions = new string[0];
     private int _currentIndex = 0;
     private string _lastLoadedUrlList = "";
+    private string[] _cachedUrls;
     
     // Current texture reference
     private Texture2D _currentTexture;
@@ -64,6 +65,8 @@ public class ImageLoader : UdonSharpBehaviour
         // Initialize core components
         _imageDownloader = new VRCImageDownloader();
         _udonEventReceiver = (IUdonEventReceiver)this;
+
+        CacheUrls();
         
         // Store reference to original material
         if (renderer != null)
@@ -90,6 +93,28 @@ public class ImageLoader : UdonSharpBehaviour
         }
     }
     
+    private void CacheUrls()
+    {
+        if (predefinedUrls == null)
+        {
+            _cachedUrls = new string[0];
+            return;
+        }
+
+        _cachedUrls = new string[predefinedUrls.Length];
+        for (int i = 0; i < predefinedUrls.Length; i++)
+        {
+            if (predefinedUrls[i] != null)
+            {
+                _cachedUrls[i] = predefinedUrls[i].Get();
+            }
+            else
+            {
+                _cachedUrls[i] = null;
+            }
+        }
+    }
+
     private void InitFromGeneratedUrls()
     {
         // Make sure predefinedUrls are properly initialized
@@ -427,11 +452,16 @@ public class ImageLoader : UdonSharpBehaviour
             Debug.LogError("No predefined URLs available!");
             return -1;
         }
+
+        if (_cachedUrls == null || _cachedUrls.Length != predefinedUrls.Length)
+        {
+            CacheUrls();
+        }
         
         // First try to find an exact match
-        for (int i = 0; i < predefinedUrls.Length; i++)
+        for (int i = 0; i < _cachedUrls.Length; i++)
         {
-            if (predefinedUrls[i] != null && predefinedUrls[i].Get() == urlToFind)
+            if (_cachedUrls[i] != null && _cachedUrls[i] == urlToFind)
             {
                 return i;
             }
@@ -454,11 +484,11 @@ public class ImageLoader : UdonSharpBehaviour
         string filename = ExtractFilenameFromUrl(urlToFind);
         if (!string.IsNullOrEmpty(filename))
         {
-            for (int i = 0; i < predefinedUrls.Length; i++)
+            for (int i = 0; i < _cachedUrls.Length; i++)
             {
-                if (predefinedUrls[i] != null && 
-                    !string.IsNullOrEmpty(predefinedUrls[i].Get()) && 
-                    predefinedUrls[i].Get().Contains(filename))
+                if (_cachedUrls[i] != null &&
+                    !string.IsNullOrEmpty(_cachedUrls[i]) &&
+                    _cachedUrls[i].Contains(filename))
                 {
                     return i;
                 }
@@ -505,13 +535,18 @@ public class ImageLoader : UdonSharpBehaviour
             Debug.LogError("No valid VRCUrl found in predefinedUrls array!");
             return -1;
         }
+
+        if (_cachedUrls == null || _cachedUrls.Length != predefinedUrls.Length)
+        {
+            CacheUrls();
+        }
         
         // Find a predefined URL that matches this filename
-        for (int i = 0; i < predefinedUrls.Length; i++)
+        for (int i = 0; i < _cachedUrls.Length; i++)
         {
-            if (predefinedUrls[i] != null && !string.IsNullOrEmpty(predefinedUrls[i].Get()))
+            if (_cachedUrls[i] != null && !string.IsNullOrEmpty(_cachedUrls[i]))
             {
-                if (predefinedUrls[i].Get().Contains(filename))
+                if (_cachedUrls[i].Contains(filename))
                 {
                     return i;
                 }
@@ -598,13 +633,18 @@ public class ImageLoader : UdonSharpBehaviour
         
         string loadedUrl = result.Url.Get();
         Debug.Log($"Image loaded successfully: {loadedUrl}");
+
+        if (_cachedUrls == null || _cachedUrls.Length != predefinedUrls.Length)
+        {
+            CacheUrls();
+        }
         
         // Find which of our URLs this corresponds to
         for (int i = 0; i < _activeUrlIndices.Length; i++)
         {
             int urlIndex = _activeUrlIndices[i];
             if (urlIndex < predefinedUrls.Length && predefinedUrls[urlIndex] != null && 
-                predefinedUrls[urlIndex].Get() == loadedUrl)
+                _cachedUrls[urlIndex] == loadedUrl)
             {
                 // Store the downloaded texture
                 _downloadedTextures[i] = result.Result;
@@ -700,6 +740,8 @@ public class ImageLoader : UdonSharpBehaviour
             }
         }
         
+        CacheUrls();
+
         // Reset URL count
         urlCount = 0;
         
