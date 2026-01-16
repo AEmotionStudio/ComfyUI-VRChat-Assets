@@ -229,7 +229,8 @@ public class ImageLoaderEditor : Editor
             for (int i = 0; i < displayCount; i++)
             {
                 string displayText = _fetchedUrls[i];
-                if (i < _fetchedCaptions.Count && !string.IsNullOrEmpty(_fetchedCaptions[i]) && _fetchedCaptions[i] != "Image")
+                // Only show caption if it's different from the default caption
+                if (i < _fetchedCaptions.Count && !string.IsNullOrEmpty(_fetchedCaptions[i]) && _fetchedCaptions[i] != imageLoader.defaultCaption)
                 {
                     displayText = $"{_fetchedCaptions[i]}: {displayText}";
                 }
