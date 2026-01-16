@@ -642,11 +642,25 @@ public class ImageLoader : UdonSharpBehaviour
         for (int i = 0; i < _activeUrlIndices.Length; i++)
         {
             int urlIndex = _activeUrlIndices[i];
-            if (urlIndex < predefinedUrls.Length && predefinedUrls[urlIndex] != null && 
-                predefinedUrls[urlIndex].Get() == loadedUrl)
+            if (urlIndex < predefinedUrls.Length && predefinedUrls[urlIndex] != null)
             {
-                // Store the downloaded texture
-                _downloadedTextures[i] = result.Result;
+                string predefUrl = predefinedUrls[urlIndex].Get();
+                bool isMatch = (predefUrl == loadedUrl);
+
+                // If not exact match, check if it's an HTTP vs HTTPS mismatch due to hot-swap
+                // loadedUrl might be http (original download request) while predefinedUrl is now https (hot-swapped)
+                if (!isMatch &&
+                    loadedUrl.StartsWith("http:") &&
+                    predefUrl.StartsWith("https:") &&
+                    loadedUrl.Substring(4) == predefUrl.Substring(5))
+                {
+                    isMatch = true;
+                }
+
+                if (isMatch)
+                {
+                    // Store the downloaded texture
+                    _downloadedTextures[i] = result.Result;
                 Debug.Log($"Stored downloaded texture at index {i}");
                 
                 // If this is the currently displayed image, update the display
