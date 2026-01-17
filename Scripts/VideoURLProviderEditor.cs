@@ -29,6 +29,14 @@ public class VideoURLProviderEditor : Editor
     // Directory path for storing VRCUrl data objects
     private string _vrcUrlsDirectory = "Assets/VRCUrls";
 
+    private MessageType _messageType = MessageType.Info;
+    private string PrefsKey => $"{Application.dataPath}_ComfyUI_VideoProvider_Dir";
+
+    private void OnEnable()
+    {
+        _vrcUrlsDirectory = EditorPrefs.GetString(PrefsKey, "Assets/VRCUrls");
+    }
+
     public override void OnInspectorGUI()
     {
         serializedObject.Update();
@@ -144,7 +152,12 @@ public class VideoURLProviderEditor : Editor
         EditorGUILayout.LabelField("URL Storage Location", EditorStyles.boldLabel);
 
         EditorGUILayout.BeginHorizontal();
+        EditorGUI.BeginChangeCheck();
         _vrcUrlsDirectory = EditorGUILayout.TextField("VRCUrls Directory", _vrcUrlsDirectory);
+        if (EditorGUI.EndChangeCheck())
+        {
+            EditorPrefs.SetString(PrefsKey, _vrcUrlsDirectory);
+        }
 
         if (GUILayout.Button(new GUIContent("Browse...", "Select a folder in your project to store the generated VRCUrl assets."), GUILayout.Width(80)))
         {
@@ -155,6 +168,7 @@ public class VideoURLProviderEditor : Editor
                 if (selectedPath.StartsWith(Application.dataPath))
                 {
                     _vrcUrlsDirectory = "Assets" + selectedPath.Substring(Application.dataPath.Length);
+                    EditorPrefs.SetString(PrefsKey, _vrcUrlsDirectory);
                 }
                 else
                 {
@@ -234,7 +248,7 @@ public class VideoURLProviderEditor : Editor
         if (!string.IsNullOrEmpty(_statusMessage))
         {
             EditorGUILayout.Space();
-            EditorGUILayout.HelpBox(_statusMessage, MessageType.Info);
+            EditorGUILayout.HelpBox(_statusMessage, _messageType);
         }
 
         // Display fetched URLs count
@@ -283,6 +297,7 @@ public class VideoURLProviderEditor : Editor
     {
         _isLoading = true;
         _statusMessage = "Fetching URLs from GitHub...";
+        _messageType = MessageType.Info;
         _fetchedUrls.Clear();
         _fetchedCaptions.Clear();
 
@@ -319,11 +334,13 @@ public class VideoURLProviderEditor : Editor
                 }
 
                 _statusMessage = $"Successfully fetched {_fetchedUrls.Count} URLs from GitHub.";
+                _messageType = MessageType.Info;
             }
         }
         catch (Exception ex)
         {
             _statusMessage = $"Error fetching URLs: {ex.Message}";
+            _messageType = MessageType.Error;
             Debug.LogError($"Error fetching URLs: {ex}");
         }
         finally
@@ -356,6 +373,7 @@ public class VideoURLProviderEditor : Editor
             if (udonBehaviour == null)
             {
                 _statusMessage = "Error: Could not find backing UdonBehaviour";
+                _messageType = MessageType.Error;
                 return;
             }
 
@@ -450,15 +468,18 @@ public class VideoURLProviderEditor : Editor
             if (successCount == urlCount)
             {
                 _statusMessage = $"Successfully created {successCount} VRCUrl objects and assigned them to predefinedUrls.";
+                _messageType = MessageType.Info;
             }
             else
             {
                 _statusMessage = $"Created {successCount} of {urlCount} VRCUrl objects. Check console for details on errors.";
+                _messageType = MessageType.Warning;
             }
         }
         catch (Exception ex)
         {
             _statusMessage = $"Error generating VRCUrl data: {ex.Message}";
+            _messageType = MessageType.Error;
             Debug.LogError($"Error generating VRCUrl data: {ex}");
             Debug.LogException(ex);
         }

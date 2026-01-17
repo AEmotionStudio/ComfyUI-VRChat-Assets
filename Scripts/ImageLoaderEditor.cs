@@ -45,6 +45,14 @@ public class ImageLoaderEditor : Editor
     // Directory path for storing VRCUrl data objects
     private string _vrcUrlsDirectory = "Assets/VRCUrls";
 
+    private MessageType _messageType = MessageType.Info;
+    private string PrefsKey => $"{Application.dataPath}_ComfyUI_ImageLoader_Dir";
+
+    private void OnEnable()
+    {
+        _vrcUrlsDirectory = EditorPrefs.GetString(PrefsKey, "Assets/VRCUrls");
+    }
+
     public override void OnInspectorGUI()
     {
         // Draw the default inspector
@@ -115,7 +123,12 @@ public class ImageLoaderEditor : Editor
         EditorGUILayout.LabelField("URL Storage Location", EditorStyles.boldLabel);
 
         EditorGUILayout.BeginHorizontal();
+        EditorGUI.BeginChangeCheck();
         _vrcUrlsDirectory = EditorGUILayout.TextField("VRCUrls Directory", _vrcUrlsDirectory);
+        if (EditorGUI.EndChangeCheck())
+        {
+            EditorPrefs.SetString(PrefsKey, _vrcUrlsDirectory);
+        }
 
         if (GUILayout.Button(new GUIContent("Browse...", "Select a folder in your project to store the generated VRCUrl assets."), GUILayout.Width(80)))
         {
@@ -126,6 +139,7 @@ public class ImageLoaderEditor : Editor
                 if (selectedPath.StartsWith(Application.dataPath))
                 {
                     _vrcUrlsDirectory = "Assets" + selectedPath.Substring(Application.dataPath.Length);
+                    EditorPrefs.SetString(PrefsKey, _vrcUrlsDirectory);
                 }
                 else
                 {
@@ -214,7 +228,7 @@ public class ImageLoaderEditor : Editor
         if (!string.IsNullOrEmpty(_statusMessage))
         {
             EditorGUILayout.Space();
-            EditorGUILayout.HelpBox(_statusMessage, MessageType.Info);
+            EditorGUILayout.HelpBox(_statusMessage, _messageType);
         }
 
         // Display fetched URLs count
@@ -251,6 +265,7 @@ public class ImageLoaderEditor : Editor
     {
         _isLoading = true;
         _statusMessage = "Fetching URLs from GitHub...";
+        _messageType = MessageType.Info;
         _fetchedUrls.Clear();
         _fetchedCaptions.Clear();
 
@@ -337,11 +352,13 @@ public class ImageLoaderEditor : Editor
                 }
 
                 _statusMessage = $"Successfully fetched {_fetchedUrls.Count} URLs from GitHub.";
+                _messageType = MessageType.Info;
             }
         }
         catch (Exception ex)
         {
             _statusMessage = $"Error fetching URLs: {ex.Message}";
+            _messageType = MessageType.Error;
             Debug.LogError($"Error fetching URLs: {ex}");
         }
         finally
@@ -362,6 +379,7 @@ public class ImageLoaderEditor : Editor
             if (predefinedUrlsProp == null)
             {
                 _statusMessage = "Error: Could not find predefinedUrls property";
+                _messageType = MessageType.Error;
                 return;
             }
 
@@ -466,15 +484,18 @@ public class ImageLoaderEditor : Editor
             if (successCount == urlCount)
             {
                 _statusMessage = $"Successfully created {successCount} VRCUrl objects and assigned them to predefinedUrls.";
+                _messageType = MessageType.Info;
             }
             else
             {
                 _statusMessage = $"Created {successCount} of {urlCount} VRCUrl objects. Check console for details on errors.";
+                _messageType = MessageType.Warning;
             }
         }
         catch (Exception ex)
         {
             _statusMessage = $"Error generating VRCUrl assets: {ex.Message}";
+            _messageType = MessageType.Error;
             Debug.LogError($"Error generating VRCUrl assets: {ex}");
         }
 
