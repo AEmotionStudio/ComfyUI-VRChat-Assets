@@ -595,8 +595,9 @@ public class ImageLoader : UdonSharpBehaviour
         for (int i = 0; i < _activeUrlIndices.Length; i++)
         {
             int urlIndex = _activeUrlIndices[i];
-            if (urlIndex < predefinedUrls.Length && predefinedUrls[urlIndex] != null && 
-                predefinedUrls[urlIndex].Get() == loadedUrl)
+            // Bolt Optimization: Use cached string array to avoid expensive .Get() calls in loop
+            if (urlIndex < _predefinedUrlStrings.Length &&
+                _predefinedUrlStrings[urlIndex] == loadedUrl)
             {
                 // Store the downloaded texture
                 _downloadedTextures[i] = result.Result;
