@@ -182,6 +182,7 @@ public class ImageLoaderEditor : Editor
 
                 // Update the editor state
                 _statusMessage = "All predefined URLs have been cleared.";
+                _messageType = MessageType.Info;
                 Repaint();
             }
         }
@@ -200,6 +201,7 @@ public class ImageLoaderEditor : Editor
             {
                 int deletedCount = DeleteVRCUrlAssets(_vrcUrlsDirectory);
                 _statusMessage = $"Deleted {deletedCount} VRCUrl assets from '{_vrcUrlsDirectory}'.";
+                _messageType = MessageType.Info;
                 Repaint();
             }
         }
@@ -218,6 +220,7 @@ public class ImageLoaderEditor : Editor
                 // Update the editor state
                 serializedObject.Update();
                 _statusMessage = "Runtime image cache cleared, keeping only the current image (if any).";
+                _messageType = MessageType.Info;
                 Repaint();
             }
         }
