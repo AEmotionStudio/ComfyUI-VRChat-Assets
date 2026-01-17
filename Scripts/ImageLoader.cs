@@ -353,14 +353,15 @@ public class ImageLoader : UdonSharpBehaviour
     
     private string ExtractUrlFromLine(string line)
     {
+        string url = "";
+
         // Format 1: "URL" (direct URL)
         if (line.StartsWith("http"))
         {
-            return line;
+            url = line;
         }
-        
         // Format 2: "filename.png: URL" (colon separated)
-        if (line.Contains(":"))
+        else if (line.Contains(":"))
         {
             int colonPos = line.IndexOf(":");
             if (colonPos >= 0 && colonPos < line.Length - 1)
@@ -368,19 +369,30 @@ public class ImageLoader : UdonSharpBehaviour
                 string afterColon = line.Substring(colonPos + 1).Trim();
                 if (afterColon.StartsWith("http"))
                 {
-                    return afterColon;
+                    url = afterColon;
                 }
             }
         }
         
         // Format 3: "n. filename.png: URL" (numbered list)
-        int httpIndex = line.IndexOf("http");
-        if (httpIndex >= 0)
+        // Only if we haven't found a URL yet
+        if (string.IsNullOrEmpty(url))
         {
-            return line.Substring(httpIndex).Trim();
+            int httpIndex = line.IndexOf("http");
+            if (httpIndex >= 0)
+            {
+                url = line.Substring(httpIndex).Trim();
+            }
         }
-        
-        return "";
+
+        // Security enhancement: Enforce HTTPS
+        // Automatically upgrade http:// to https:// to prevent mixed content/insecure loads
+        if (!string.IsNullOrEmpty(url) && url.StartsWith("http://"))
+        {
+            url = "https://" + url.Substring(7);
+        }
+
+        return url;
     }
     
     private string ExtractCaptionFromLine(string line)
@@ -498,7 +510,13 @@ public class ImageLoader : UdonSharpBehaviour
         {
             if (predefinedUrls[i] != null)
             {
-                _predefinedUrlStrings[i] = predefinedUrls[i].Get();
+                string url = predefinedUrls[i].Get();
+                // Ensure cached URLs are also HTTPS to match the extraction logic
+                if (url.StartsWith("http://"))
+                {
+                    url = "https://" + url.Substring(7);
+                }
+                _predefinedUrlStrings[i] = url;
             }
         }
         Debug.Log($"Refreshed URL cache with {_predefinedUrlStrings.Length} entries");
