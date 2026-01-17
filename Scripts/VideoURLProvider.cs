@@ -983,7 +983,27 @@ public class VideoURLProvider : UdonSharpBehaviour
         // First try to find an exact match in predefined URLs
         for (int i = 0; i < predefinedUrls.Length; i++)
         {
-            if (predefinedUrls[i] != null && predefinedUrls[i].Get() == urlToFind)
+            if (predefinedUrls[i] == null) continue;
+
+            string storedUrl = predefinedUrls[i].Get();
+            bool isMatch = false;
+
+            // Check exact match
+            if (storedUrl == urlToFind)
+            {
+                isMatch = true;
+            }
+            // Check if stored URL upgraded to HTTPS matches (soft matching)
+            else if (storedUrl.StartsWith("http://"))
+            {
+                string storedUrlHttps = "https://" + storedUrl.Substring(7);
+                if (storedUrlHttps == urlToFind)
+                {
+                    isMatch = true;
+                }
+            }
+
+            if (isMatch)
             {
                 // Check if this URL index is already in our active indices
                 for (int j = 0; j < _activeUrlIndices.Length; j++)

@@ -404,7 +404,7 @@ public class ImageLoader : UdonSharpBehaviour
         {
             url = "https://" + url.Substring(7);
         }
-        
+
         return url;
     }
     
@@ -520,7 +520,13 @@ public class ImageLoader : UdonSharpBehaviour
         {
             if (predefinedUrls[i] != null)
             {
-                _predefinedUrlStrings[i] = predefinedUrls[i].Get();
+                string url = predefinedUrls[i].Get();
+                // Ensure cached URLs are also HTTPS to match the extraction logic
+                if (url.StartsWith("http://"))
+                {
+                    url = "https://" + url.Substring(7);
+                }
+                _predefinedUrlStrings[i] = url;
             }
         }
         Debug.Log($"Refreshed URL cache with {_predefinedUrlStrings.Length} entries");
