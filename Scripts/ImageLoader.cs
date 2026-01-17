@@ -57,6 +57,8 @@ public class ImageLoader : UdonSharpBehaviour
     
     // Cache of string values from predefinedUrls to avoid repeated .Get() calls and object access
     private string[] _predefinedUrlStrings;
+    // O(1) lookup mask for currently active URLs
+    private bool[] _activeUrlMask;
 
     // Current texture reference
     private Texture2D _currentTexture;
@@ -271,6 +273,9 @@ public class ImageLoader : UdonSharpBehaviour
         string[] tempCaptions = new string[lines.Length];
         int tempCount = 0;
         
+        // Temporary mask to check for duplicates within the current batch
+        bool[] tempMask = new bool[_activeUrlMask.Length];
+
         Debug.Log($"Processing URL list with {lines.Length} lines");
         
         // Process each line (URL)
@@ -294,31 +299,9 @@ public class ImageLoader : UdonSharpBehaviour
             int matchingUrlIndex = FindMatchingUrlIndex(urlStr, tempCount);
             if (matchingUrlIndex >= 0)
             {
-                // Check if this URL index is already in our active URLs
-                bool alreadyActive = false;
-                for (int i = 0; i < _activeUrlIndices.Length; i++)
-                {
-                    if (_activeUrlIndices[i] == matchingUrlIndex)
-                    {
-                        alreadyActive = true;
-                        break;
-                    }
-                }
-                
-                // Also check if we already added it in this batch
-                if (!alreadyActive)
-                {
-                    for (int i = 0; i < tempCount; i++)
-                    {
-                        if (tempIndices[i] == matchingUrlIndex)
-                        {
-                            alreadyActive = true;
-                            break;
-                        }
-                    }
-                }
-
-                if (!alreadyActive)
+                // Optimized O(1) duplicate checks using boolean masks
+                // Check if this URL index is already active or already added in this batch
+                if (matchingUrlIndex < _activeUrlMask.Length && !_activeUrlMask[matchingUrlIndex] && !tempMask[matchingUrlIndex])
                 {
                     // Extract caption if available
                     string caption = ExtractCaptionFromLine(trimmedLine);
@@ -330,6 +313,10 @@ public class ImageLoader : UdonSharpBehaviour
                     // Add to temp arrays
                     tempIndices[tempCount] = matchingUrlIndex;
                     tempCaptions[tempCount] = caption;
+
+                    // Mark as used in this batch
+                    tempMask[matchingUrlIndex] = true;
+
                     tempCount++;
 
                     Debug.Log($"Found new image to add: {urlStr} (index: {matchingUrlIndex})");
@@ -500,10 +487,13 @@ public class ImageLoader : UdonSharpBehaviour
         if (predefinedUrls == null)
         {
             _predefinedUrlStrings = new string[0];
+            _activeUrlMask = new bool[0];
             return;
         }
 
         _predefinedUrlStrings = new string[predefinedUrls.Length];
+        _activeUrlMask = new bool[predefinedUrls.Length];
+
         for (int i = 0; i < predefinedUrls.Length; i++)
         {
             if (predefinedUrls[i] != null)
@@ -539,6 +529,13 @@ public class ImageLoader : UdonSharpBehaviour
             newActiveIndices[oldLength + i] = newIndicesToAdd[i];
             // newTextures is already initialized to nulls, which is what we want for new images
             newCaptions[oldLength + i] = newCaptionsToAdd[i];
+
+            // Update mask
+            int idx = newIndicesToAdd[i];
+            if (idx >= 0 && idx < _activeUrlMask.Length)
+            {
+                _activeUrlMask[idx] = true;
+            }
         }
 
         // Update arrays
@@ -558,6 +555,16 @@ public class ImageLoader : UdonSharpBehaviour
         Texture2D[] newTextures = new Texture2D[newLength];
         string[] newCaptions = new string[newLength];
         
+        // Mark removed entries as inactive in mask
+        for (int i = 0; i < countToRemove; i++)
+        {
+            int idx = _activeUrlIndices[i];
+            if (idx >= 0 && idx < _activeUrlMask.Length)
+            {
+                _activeUrlMask[idx] = false;
+            }
+        }
+
         // Copy the newest entries (skip the oldest)
         for (int i = 0; i < newLength; i++)
         {
@@ -722,6 +729,22 @@ public class ImageLoader : UdonSharpBehaviour
             int currentUrlIndex = _activeUrlIndices[_currentIndex];
             string currentCaption = _captions[_currentIndex];
             Texture2D currentTexture = _downloadedTextures[_currentIndex];
+
+            // Update mask: Clear all active bits first
+            for (int i = 0; i < _activeUrlIndices.Length; i++)
+            {
+                int idx = _activeUrlIndices[i];
+                if (idx >= 0 && idx < _activeUrlMask.Length)
+                {
+                    _activeUrlMask[idx] = false;
+                }
+            }
+
+            // Set current URL to active
+            if (currentUrlIndex >= 0 && currentUrlIndex < _activeUrlMask.Length)
+            {
+                _activeUrlMask[currentUrlIndex] = true;
+            }
             
             // Reset to just the current URL
             _activeUrlIndices = new int[1] { currentUrlIndex };
@@ -733,6 +756,16 @@ public class ImageLoader : UdonSharpBehaviour
         }
         else
         {
+            // Update mask: Clear all active bits
+            for (int i = 0; i < _activeUrlIndices.Length; i++)
+            {
+                int idx = _activeUrlIndices[i];
+                if (idx >= 0 && idx < _activeUrlMask.Length)
+                {
+                    _activeUrlMask[idx] = false;
+                }
+            }
+
             // If no current URL, clear everything
             _activeUrlIndices = new int[0];
             _downloadedTextures = new Texture2D[0];
