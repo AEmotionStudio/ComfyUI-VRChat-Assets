@@ -1,7 +1,3 @@
-## 2024-05-23 - Custom Editor Tooltips & Feedback
-**Learning:** Unity's IMGUI system (`GUILayout.Button`) does not support separate tooltip parameters. Tooltips must be attached via `new GUIContent("Text", "Tooltip")`. This is easy to miss when writing quick editor tools, leading to opaque "magic buttons" that users are afraid to click.
-**Action:** When creating or auditing custom Unity Editors, always wrap button strings in `GUIContent` and provide a tooltip that explains the *consequence* of the action (e.g., "Deleting files" vs "Clearing references").
-
-## 2024-05-23 - Data Preview in Inspectors
-**Learning:** Users lack confidence in "Fetch/Import" actions if they can't see what was actually fetched before committing it to the project.
-**Action:** Always provide a preview of fetched data (like parsing captions alongside URLs) in the Inspector window so users can verify the parsing logic worked correctly before generating assets.
+## 2024-05-23 - Persistent Editor Settings and Semantic Feedback
+**Learning:** Users find it frustrating when non-serialized editor settings (like directory paths) reset on every script reload or domain reload. Using `EditorPrefs` scoped with `Application.dataPath` provides a robust, project-specific persistence mechanism that survives reloads without modifying asset files. Additionally, replacing generic "Info" status boxes with dynamic `MessageType` (Error/Warning) significantly improves the clarity of operation results.
+**Action:** When creating custom Editor tools that require file paths or configuration not suitable for serialization on the target component, always implement `EditorPrefs` persistence in `OnEnable`/`OnDisable`. Ensure all status feedback uses appropriate visual severity levels.
