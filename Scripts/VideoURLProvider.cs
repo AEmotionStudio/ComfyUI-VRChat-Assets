@@ -902,8 +902,10 @@ public class VideoURLProvider : UdonSharpBehaviour
         // Split the file into lines
         string[] lines = urlList.Split('\n');
         
-        bool foundNewVideos = false;
-        int newVideosProcessed = 0;
+        // Bolt Optimization: Use temporary arrays for batch processing to avoid O(N^2) array resizing
+        int[] tempIndices = new int[lines.Length];
+        string[] tempCaptions = new string[lines.Length];
+        int tempCount = 0;
         
         Debug.Log($"[VideoURLProvider] Processing {lines.Length} lines from URL list");
         
@@ -921,20 +923,21 @@ public class VideoURLProvider : UdonSharpBehaviour
             
             // Check the return value appropriately
             if (matchingUrlIndex >= 0)
+            {
+                // Extract caption if available
+                string caption = ExtractCaptionFromLine(trimmedLine);
+                if (string.IsNullOrEmpty(caption))
                 {
-                    // Extract caption if available
-                    string caption = ExtractCaptionFromLine(trimmedLine);
-                    if (string.IsNullOrEmpty(caption))
-                    {
-                        caption = defaultCaption;
-                    }
-                    
-                    // Add this URL index to our active list
-                    AddUrlIndex(matchingUrlIndex, caption);
-                    foundNewVideos = true;
-                    newVideosProcessed++;
-                    Debug.Log($"[VideoURLProvider] Added new video: {urlStr} (index: {matchingUrlIndex})");
+                    caption = defaultCaption;
                 }
+
+                // Add to temporary arrays instead of resizing immediately
+                tempIndices[tempCount] = matchingUrlIndex;
+                tempCaptions[tempCount] = caption;
+                tempCount++;
+
+                Debug.Log($"[VideoURLProvider] Found new video: {urlStr} (index: {matchingUrlIndex})");
+            }
             else if (matchingUrlIndex == -1)
             {
                 // Skip this URL as it was determined to be a duplicate by FindMatchingUrlIndex
@@ -947,9 +950,12 @@ public class VideoURLProvider : UdonSharpBehaviour
         }
         
         // If we found new videos
-        if (foundNewVideos)
+        if (tempCount > 0)
         {
-            Debug.Log($"[VideoURLProvider] Found {newVideosProcessed} new videos. Continuing current playlist.");
+            // Perform a single batch addition (O(N) instead of O(N^2))
+            AddUrlIndicesBatch(tempIndices, tempCaptions, tempCount);
+
+            Debug.Log($"[VideoURLProvider] Found {tempCount} new videos. Continuing current playlist.");
             
             // Make sure we don't have any duplicate videos in the playlist
             RebuildUniquePlaylist();
@@ -1077,6 +1083,37 @@ public class VideoURLProvider : UdonSharpBehaviour
         _captions = newCaptions;
         
         Debug.Log($"[VideoURLProvider] Added new video (index: {_activeUrlIndices.Length-1}, URL index: {urlIndex})");
+    }
+
+    private void AddUrlIndicesBatch(int[] newIndicesToAdd, string[] newCaptionsToAdd, int countToAdd)
+    {
+        if (countToAdd <= 0) return;
+
+        int oldLength = _activeUrlIndices.Length;
+        int newLength = oldLength + countToAdd;
+
+        int[] newActiveIndices = new int[newLength];
+        string[] newCaptions = new string[newLength];
+
+        // Copy existing data
+        for (int i = 0; i < oldLength; i++)
+        {
+            newActiveIndices[i] = _activeUrlIndices[i];
+            newCaptions[i] = _captions[i];
+        }
+
+        // Add new data
+        for (int i = 0; i < countToAdd; i++)
+        {
+            newActiveIndices[oldLength + i] = newIndicesToAdd[i];
+            newCaptions[oldLength + i] = newCaptionsToAdd[i];
+        }
+
+        // Update arrays
+        _activeUrlIndices = newActiveIndices;
+        _captions = newCaptions;
+
+        Debug.Log($"[VideoURLProvider] Batch added {countToAdd} new videos. Total videos: {_activeUrlIndices.Length}");
     }
     
     private void TrimOldestUrls(int countToRemove)
