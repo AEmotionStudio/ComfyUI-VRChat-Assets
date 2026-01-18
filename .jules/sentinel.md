@@ -7,3 +7,8 @@
 **Vulnerability:** External configuration lists could supply `http://` URLs, potentially allowing mixed content or insecure data transmission if the allowlist check was lenient.
 **Learning:** Even if the allowed list is secure, runtime inputs should be sanitized to match the expected security standard. Implicitly trusting the protocol provided by external sources can lead to security downgrades.
 **Prevention:** Automatically upgrade `http://` to `https://` at the ingestion point (parsing logic) to ensure all runtime URLs comply with security standards before they are used or compared against allowed lists.
+
+## 2024-10-18 - Prevent Caption Spoofing via Loose Filename Matching
+**Vulnerability:** `ImageLoader` used a fallback matching strategy that compared filenames if an exact URL match wasn't found. This allowed attackers to display trusted images with arbitrary captions by providing a URL ending in the same filename.
+**Learning:** Convenience features like "fuzzy matching" often introduce security gaps ("Confused Deputy"). "Fail Closed" implies "Fail Exact" - do not guess matches based on partial data.
+**Prevention:** Stick to exact string matching for allowlists. Remove logic that attempts to match resources based on partial indicators (like filenames) to prevent context spoofing.
