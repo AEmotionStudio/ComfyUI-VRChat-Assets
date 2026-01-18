@@ -455,43 +455,11 @@ public class ImageLoader : UdonSharpBehaviour
             }
         }
         
-        // Extract the filename from the URL as a fallback matching strategy
-        string filename = ExtractFilenameFromUrl(urlToFind);
-        if (!string.IsNullOrEmpty(filename))
-        {
-            for (int i = 0; i < _predefinedUrlStrings.Length; i++)
-            {
-                if (!string.IsNullOrEmpty(_predefinedUrlStrings[i]) &&
-                    _predefinedUrlStrings[i].Contains(filename))
-                {
-                    return i;
-                }
-            }
-        }
-        
         // Last resort: find any available predefined URL
         // REMOVED for security: preventing content spoofing.
         // If the URL is not found in the predefined list, we should NOT display a random image.
         
         return -1;
-    }
-    
-    private string ExtractFilenameFromUrl(string url)
-    {
-        if (string.IsNullOrEmpty(url)) return "";
-        
-        // Split by query parameters first (Optimized to avoid Split allocation)
-        int queryIndex = url.IndexOf('?');
-        string baseUrl = queryIndex >= 0 ? url.Substring(0, queryIndex) : url;
-        
-        // Find last slash to extract the filename
-        int lastSlashIndex = baseUrl.LastIndexOf('/');
-        if (lastSlashIndex >= 0 && lastSlashIndex < baseUrl.Length - 1)
-        {
-            return baseUrl.Substring(lastSlashIndex + 1);
-        }
-        
-        return "";
     }
     
     private void RefreshUrlStringsCache()
