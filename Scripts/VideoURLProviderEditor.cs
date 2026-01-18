@@ -98,7 +98,24 @@ public class VideoURLProviderEditor : Editor
 
         // Display the raw GitHub URL field
         EditorGUILayout.BeginHorizontal();
-        videoProvider.githubRawUrlString = EditorGUILayout.TextField("GitHub Raw URL", videoProvider.githubRawUrlString);
+        string newUrl = EditorGUILayout.TextField("GitHub Raw URL", videoProvider.githubRawUrlString);
+        if (newUrl != videoProvider.githubRawUrlString)
+        {
+            videoProvider.githubRawUrlString = newUrl != null ? newUrl.Trim() : "";
+            EditorUtility.SetDirty(videoProvider);
+        }
+
+        if (GUILayout.Button(new GUIContent("Open", "Open this URL in your default web browser"), GUILayout.Width(45)))
+        {
+            if (!string.IsNullOrEmpty(videoProvider.githubRawUrlString))
+            {
+                Application.OpenURL(videoProvider.githubRawUrlString);
+            }
+            else
+            {
+                EditorUtility.DisplayDialog("Invalid URL", "The URL field is empty.", "OK");
+            }
+        }
         EditorGUILayout.EndHorizontal();
 
         // Check for common GitHub URL mistake (using blob instead of raw)
@@ -336,8 +353,16 @@ public class VideoURLProviderEditor : Editor
                     _fetchedCaptions.Add(caption);
                 }
 
-                _statusMessage = $"Successfully fetched {_fetchedUrls.Count} URLs from GitHub.";
-                _messageType = MessageType.Info;
+                if (_fetchedUrls.Count > 0)
+                {
+                    _statusMessage = $"Successfully fetched {_fetchedUrls.Count} URLs from GitHub.";
+                    _messageType = MessageType.Info;
+                }
+                else
+                {
+                    _statusMessage = "Fetched content but found 0 valid URLs. Please check the file format.";
+                    _messageType = MessageType.Warning;
+                }
             }
         }
         catch (Exception ex)
