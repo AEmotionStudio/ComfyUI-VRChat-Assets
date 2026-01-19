@@ -69,11 +69,23 @@ public class ImageLoaderEditor : Editor
 
         // Display the raw GitHub URL field
         EditorGUILayout.BeginHorizontal();
-        string newUrl = EditorGUILayout.TextField("GitHub Raw URL", imageLoader.githubRawUrlString);
+        string newUrl = EditorGUILayout.TextField(new GUIContent("GitHub Raw URL", "The raw URL of the Markdown file on GitHub containing your list of images."), imageLoader.githubRawUrlString);
         if (newUrl != imageLoader.githubRawUrlString)
         {
             imageLoader.githubRawUrlString = newUrl != null ? newUrl.Trim() : "";
             EditorUtility.SetDirty(imageLoader);
+        }
+
+        if (GUILayout.Button(new GUIContent("Paste", "Paste URL from clipboard"), GUILayout.Width(45)))
+        {
+            string clipboard = GUIUtility.systemCopyBuffer;
+            if (!string.IsNullOrEmpty(clipboard))
+            {
+                imageLoader.githubRawUrlString = clipboard.Trim();
+                EditorUtility.SetDirty(imageLoader);
+                GUI.FocusControl(null); // Clear focus to update the field
+                Repaint();
+            }
         }
 
         if (GUILayout.Button(new GUIContent("Open", "Open this URL in your default web browser"), GUILayout.Width(45)))
@@ -96,7 +108,7 @@ public class ImageLoaderEditor : Editor
         {
             EditorGUILayout.HelpBox("It looks like you're using a standard GitHub URL. Please use the 'Raw' version.", MessageType.Warning);
 
-            if (GUILayout.Button("Fix URL automatically"))
+            if (GUILayout.Button(new GUIContent("Fix URL automatically", "Convert the standard GitHub blob URL to a raw content URL.")))
             {
                 // Convert: https://github.com/user/repo/blob/branch/file
                 // To: https://raw.githubusercontent.com/user/repo/branch/file
