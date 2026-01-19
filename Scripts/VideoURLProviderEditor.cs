@@ -98,11 +98,23 @@ public class VideoURLProviderEditor : Editor
 
         // Display the raw GitHub URL field
         EditorGUILayout.BeginHorizontal();
-        string newUrl = EditorGUILayout.TextField("GitHub Raw URL", videoProvider.githubRawUrlString);
+        string newUrl = EditorGUILayout.TextField(new GUIContent("GitHub Raw URL", "The raw URL of the Markdown file on GitHub containing your list of videos."), videoProvider.githubRawUrlString);
         if (newUrl != videoProvider.githubRawUrlString)
         {
             videoProvider.githubRawUrlString = newUrl != null ? newUrl.Trim() : "";
             EditorUtility.SetDirty(videoProvider);
+        }
+
+        if (GUILayout.Button(new GUIContent("Paste", "Paste URL from clipboard"), GUILayout.Width(45)))
+        {
+            string clipboard = GUIUtility.systemCopyBuffer;
+            if (!string.IsNullOrEmpty(clipboard))
+            {
+                videoProvider.githubRawUrlString = clipboard.Trim();
+                EditorUtility.SetDirty(videoProvider);
+                GUI.FocusControl(null); // Clear focus to update the field
+                Repaint();
+            }
         }
 
         if (GUILayout.Button(new GUIContent("Open", "Open this URL in your default web browser"), GUILayout.Width(45)))
@@ -125,7 +137,7 @@ public class VideoURLProviderEditor : Editor
         {
             EditorGUILayout.HelpBox("It looks like you're using a standard GitHub URL. Please use the 'Raw' version.", MessageType.Warning);
 
-            if (GUILayout.Button("Fix URL automatically"))
+            if (GUILayout.Button(new GUIContent("Fix URL automatically", "Convert the standard GitHub blob URL to a raw content URL.")))
             {
                 // Convert: https://github.com/user/repo/blob/branch/file
                 // To: https://raw.githubusercontent.com/user/repo/branch/file
