@@ -90,6 +90,21 @@ public class ImageLoader : UdonSharpBehaviour
         // Start checking for URL updates from GitHub
         if (githubCdnListUrl != null) 
         {
+            // Security: Enforce HTTPS for the configuration list itself
+            string urlStr = githubCdnListUrl.Get();
+            if (!string.IsNullOrEmpty(urlStr) && urlStr.StartsWith("http://"))
+            {
+                Debug.LogWarning("Upgrading CDN List URL to HTTPS for security");
+                githubCdnListUrl = new VRCUrl("https://" + urlStr.Substring(7));
+            }
+
+            // Security: Enforce minimum update interval to prevent DoS
+            if (checkForUpdatesInterval < 5f)
+            {
+                Debug.LogWarning("Increasing check interval to 5s minimum");
+                checkForUpdatesInterval = 5f;
+            }
+
             // Do first check immediately
             CheckForNewUrls();
             

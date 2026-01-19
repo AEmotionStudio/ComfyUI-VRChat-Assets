@@ -12,3 +12,8 @@
 **Vulnerability:** `ImageLoader` used a fallback matching strategy that compared filenames if an exact URL match wasn't found. This allowed attackers to display trusted images with arbitrary captions by providing a URL ending in the same filename.
 **Learning:** Convenience features like "fuzzy matching" often introduce security gaps ("Confused Deputy"). "Fail Closed" implies "Fail Exact" - do not guess matches based on partial data.
 **Prevention:** Stick to exact string matching for allowlists. Remove logic that attempts to match resources based on partial indicators (like filenames) to prevent context spoofing.
+
+## 2024-10-24 - Enforce HTTPS on Configuration Sources & Rate Limiting
+**Vulnerability:** Configuration sources (text files with URLs) could be loaded over insecure HTTP, and update checks could be configured to run too frequently (DoS risk).
+**Learning:** Security controls applied to *content* (images/videos) must also apply to the *configuration sources* that dictate that content. Rate limiting is essential for automated polling mechanisms.
+**Prevention:** Enforce HTTPS at the config loading stage. Clamp polling intervals to a safe minimum (e.g., 5 seconds).
