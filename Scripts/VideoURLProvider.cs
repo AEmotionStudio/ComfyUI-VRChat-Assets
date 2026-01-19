@@ -78,6 +78,9 @@ public class VideoURLProvider : UdonSharpBehaviour
     private string[] _captions = new string[0];
     private int _currentIndex = 0;
     private string _lastLoadedUrlList = "";
+
+    // Cache of string values from predefinedUrls to avoid repeated .Get() calls and object access
+    private string[] _predefinedUrlStrings;
     private float _lastChangeTime = 0f;
     private bool _isChangingVideo = false;
     private bool _isVideoPlayerReady = false;
@@ -100,6 +103,9 @@ public class VideoURLProvider : UdonSharpBehaviour
         Debug.Log("[VideoURLProvider] Starting initialization...");
         _udonEventReceiver = (IUdonEventReceiver)this;
         
+        // Refresh the URL string cache
+        RefreshUrlStringsCache();
+
         // Clear any existing URLs to start fresh
         _activeUrlIndices = new int[0];
         _captions = new string[0];
@@ -266,9 +272,9 @@ public class VideoURLProvider : UdonSharpBehaviour
         // Display all available URLs for debugging
         for (int i = 0; i < predefinedUrls.Length; i++)
         {
-            if (predefinedUrls[i] != null)
+            if (_predefinedUrlStrings != null && i < _predefinedUrlStrings.Length && _predefinedUrlStrings[i] != null)
             {
-                Debug.Log($"[VideoURLProvider] URL[{i}]: {predefinedUrls[i].Get()}");
+                Debug.Log($"[VideoURLProvider] URL[{i}]: {_predefinedUrlStrings[i]}");
             }
             else
             {
@@ -276,36 +282,22 @@ public class VideoURLProvider : UdonSharpBehaviour
             }
         }
         
-        // Create a lookup map of URL strings to avoid duplicates
-        string[] urlStrings = new string[predefinedUrls.Length];
-        for (int i = 0; i < predefinedUrls.Length; i++)
-        {
-            if (predefinedUrls[i] != null)
-            {
-                urlStrings[i] = predefinedUrls[i].Get();
-            }
-            else
-            {
-                urlStrings[i] = "";
-            }
-        }
-        
         // For each available slot, populate with initial URLs
         for (int i = 0; i < urlCount; i++)
         {
             // Check if URL is valid
-            if (predefinedUrls[i] != null && !string.IsNullOrEmpty(predefinedUrls[i].Get()))
+            if (predefinedUrls[i] != null && _predefinedUrlStrings != null && i < _predefinedUrlStrings.Length && !string.IsNullOrEmpty(_predefinedUrlStrings[i]))
             {
                 // Check for duplicates by comparing URL strings
                 bool isDuplicate = false;
-                string currentUrl = predefinedUrls[i].Get();
+                string currentUrl = _predefinedUrlStrings[i];
                 
                 for (int j = 0; j < i; j++)
                 {
                     // Skip null URLs
-                    if (predefinedUrls[j] == null) continue;
+                    if (_predefinedUrlStrings[j] == null) continue;
                     
-                    if (urlStrings[j] == currentUrl)
+                    if (_predefinedUrlStrings[j] == currentUrl)
                     {
                         isDuplicate = true;
                         Debug.Log($"[VideoURLProvider] Skipping duplicate URL at index {i} (matches index {j}): {currentUrl}");
@@ -981,36 +973,26 @@ public class VideoURLProvider : UdonSharpBehaviour
     private int FindMatchingUrlIndex(string urlToFind, int additionalCount = 0)
     {
         // Exit early if we don't have predefined URLs
-        if (predefinedUrls == null || predefinedUrls.Length == 0)
+        if (_predefinedUrlStrings == null || _predefinedUrlStrings.Length == 0)
         {
-            Debug.LogError("[VideoURLProvider] No predefined URLs available!");
-            return -2; // Changed to -2 to distinguish from duplicate case
+            // Fallback: try to refresh if predefinedUrls exists
+            if (predefinedUrls != null && predefinedUrls.Length > 0)
+            {
+                RefreshUrlStringsCache();
+            }
+
+            if (_predefinedUrlStrings == null || _predefinedUrlStrings.Length == 0)
+            {
+                Debug.LogError("[VideoURLProvider] No predefined URLs available!");
+                return -2; // Changed to -2 to distinguish from duplicate case
+            }
         }
-        
+
         // First try to find an exact match in predefined URLs
-        for (int i = 0; i < predefinedUrls.Length; i++)
+        for (int i = 0; i < _predefinedUrlStrings.Length; i++)
         {
-            if (predefinedUrls[i] == null) continue;
-
-            string storedUrl = predefinedUrls[i].Get();
-            bool isMatch = false;
-
-            // Check exact match
-            if (storedUrl == urlToFind)
-            {
-                isMatch = true;
-            }
-            // Check if stored URL upgraded to HTTPS matches (soft matching)
-            else if (storedUrl.StartsWith("http://"))
-            {
-                string storedUrlHttps = "https://" + storedUrl.Substring(7);
-                if (storedUrlHttps == urlToFind)
-                {
-                    isMatch = true;
-                }
-            }
-
-            if (isMatch)
+            // Bolt Optimization: Use cached string array to avoid expensive .Get() calls in loop
+            if (_predefinedUrlStrings[i] != null && _predefinedUrlStrings[i] == urlToFind)
             {
                 // Check if this URL index is already in our active indices
                 for (int j = 0; j < _activeUrlIndices.Length; j++)
@@ -1035,16 +1017,16 @@ public class VideoURLProvider : UdonSharpBehaviour
             int index = (_activeUrlIndices.Length + additionalCount) % urlCount;
             
             // Ensure the predefined URL at this index exists
-            if (index < predefinedUrls.Length && predefinedUrls[index] != null)
+            if (index < _predefinedUrlStrings.Length && _predefinedUrlStrings[index] != null)
             {
                 // Check if this URL is already used
-                string newUrl = predefinedUrls[index].Get();
+                string newUrl = _predefinedUrlStrings[index];
                 for (int j = 0; j < _activeUrlIndices.Length; j++)
                 {
                     int existingIndex = _activeUrlIndices[j];
-                    if (existingIndex < predefinedUrls.Length && predefinedUrls[existingIndex] != null)
+                    if (existingIndex < _predefinedUrlStrings.Length && _predefinedUrlStrings[existingIndex] != null)
                     {
-                        if (predefinedUrls[existingIndex].Get() == newUrl)
+                        if (_predefinedUrlStrings[existingIndex] == newUrl)
                         {
                             Debug.Log($"[VideoURLProvider] URL already exists in playlist, skipping duplicate: {newUrl}");
                             return -1; // Skip adding duplicate
@@ -1061,6 +1043,32 @@ public class VideoURLProvider : UdonSharpBehaviour
         // If the URL is not found in the predefined list, we should NOT display a random video.
         
         return -2; // No suitable index found
+    }
+
+    private void RefreshUrlStringsCache()
+    {
+        if (predefinedUrls == null)
+        {
+            _predefinedUrlStrings = new string[0];
+            return;
+        }
+
+        _predefinedUrlStrings = new string[predefinedUrls.Length];
+
+        for (int i = 0; i < predefinedUrls.Length; i++)
+        {
+            if (predefinedUrls[i] != null)
+            {
+                string url = predefinedUrls[i].Get();
+                // Ensure cached URLs are also HTTPS to match the extraction logic
+                if (url.StartsWith("http://"))
+                {
+                    url = "https://" + url.Substring(7);
+                }
+                _predefinedUrlStrings[i] = url;
+            }
+        }
+        Debug.Log($"[VideoURLProvider] Refreshed URL cache with {_predefinedUrlStrings.Length} entries");
     }
     
     private void AddUrlIndex(int urlIndex, string caption)
