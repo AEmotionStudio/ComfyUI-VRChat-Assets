@@ -560,7 +560,7 @@ public class VideoURLProviderEditor : Editor
             for (int i = 0; i < assetFiles.Length; i++)
             {
                 string file = assetFiles[i];
-                if (i % 10 == 0)
+                if (i % 10 == 0 || i == assetFiles.Length - 1)
                 {
                     EditorUtility.DisplayProgressBar("Deleting Assets",
                         $"Processing file {i + 1}/{assetFiles.Length}",

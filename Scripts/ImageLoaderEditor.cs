@@ -577,7 +577,7 @@ public class ImageLoaderEditor : Editor
             for (int i = 0; i < assetFiles.Length; i++)
             {
                 string file = assetFiles[i];
-                if (i % 10 == 0)
+                if (i % 10 == 0 || i == assetFiles.Length - 1)
                 {
                     EditorUtility.DisplayProgressBar("Deleting Assets",
                         $"Processing file {i + 1}/{assetFiles.Length}",
@@ -609,7 +609,7 @@ public class ImageLoaderEditor : Editor
             for (int i = 0; i < urlAssets.Length; i++)
             {
                 string file = urlAssets[i];
-                if (i % 5 == 0)
+                if (i % 5 == 0 || i == urlAssets.Length - 1)
                 {
                     EditorUtility.DisplayProgressBar("Deleting Assets",
                         $"Removing legacy URL asset {i + 1}/{urlAssets.Length}",
