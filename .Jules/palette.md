@@ -9,3 +9,7 @@
 ## 2024-05-25 - Frictionless Data Entry in Unity Inspectors
 **Learning:** In Unity's IMGUI, modifying a text field's backing variable programmatically (e.g., via a "Paste" button) does not automatically update the UI if the field is currently focused or if the frame hasn't repainted. Explicitly calling `GUI.FocusControl(null)` ensures the field releases focus and refreshes its content, while `Repaint()` forces an immediate visual update.
 **Action:** When adding "Paste" or "Reset" buttons to Unity Inspectors, always pair the data modification with `GUI.FocusControl(null)` and `Repaint()` to prevent UI desynchronization.
+
+## 2024-05-26 - Feedback for Blocking Editor Operations
+**Learning:** Unity Editor scripts run on the main thread. When iterating over large datasets (like generating hundreds of assets), the UI freezes, leaving the user unsure if the process crashed.
+**Action:** Implement `EditorUtility.DisplayProgressBar` inside significant loops (generation, deletion) and ensure `EditorUtility.ClearProgressBar` is called in a `finally` block to prevents stuck UI.

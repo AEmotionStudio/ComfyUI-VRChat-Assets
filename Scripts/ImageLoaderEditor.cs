@@ -452,6 +452,14 @@ public class ImageLoaderEditor : Editor
             // Create VRCUrl assets one by one
             for (int i = 0; i < urlCount; i++)
             {
+                // Show progress bar
+                if (i % 5 == 0 || i == urlCount - 1)
+                {
+                    EditorUtility.DisplayProgressBar("Generating Assets",
+                        $"Creating VRCUrl asset {i + 1}/{urlCount}",
+                        (float)(i + 1) / urlCount);
+                }
+
                 string url = _fetchedUrls[i];
 
                 try
@@ -538,6 +546,10 @@ public class ImageLoaderEditor : Editor
             _messageType = MessageType.Error;
             Debug.LogError($"Error generating VRCUrl assets: {ex}");
         }
+        finally
+        {
+            EditorUtility.ClearProgressBar();
+        }
 
         // Force the inspector to repaint
         Repaint();
@@ -562,8 +574,16 @@ public class ImageLoaderEditor : Editor
             // Get all .asset files in the directory
             string[] assetFiles = Directory.GetFiles(absolutePath, "*.asset");
 
-            foreach (string file in assetFiles)
+            for (int i = 0; i < assetFiles.Length; i++)
             {
+                string file = assetFiles[i];
+                if (i % 10 == 0 || i == assetFiles.Length - 1)
+                {
+                    EditorUtility.DisplayProgressBar("Deleting Assets",
+                        $"Processing file {i + 1}/{assetFiles.Length}",
+                        (float)(i + 1) / assetFiles.Length);
+                }
+
                 // Convert to project-relative path
                 string projectPath = "Assets" + file.Substring(Application.dataPath.Length).Replace('\\', '/');
 
@@ -586,8 +606,16 @@ public class ImageLoaderEditor : Editor
 
             // Delete URL_ assets that have the cube icon (these are the VRCUrl assets)
             string[] urlAssets = Directory.GetFiles(absolutePath, "URL_*.asset");
-            foreach (string file in urlAssets)
+            for (int i = 0; i < urlAssets.Length; i++)
             {
+                string file = urlAssets[i];
+                if (i % 5 == 0 || i == urlAssets.Length - 1)
+                {
+                    EditorUtility.DisplayProgressBar("Deleting Assets",
+                        $"Removing legacy URL asset {i + 1}/{urlAssets.Length}",
+                        (float)(i + 1) / urlAssets.Length);
+                }
+
                 string projectPath = "Assets" + file.Substring(Application.dataPath.Length).Replace('\\', '/');
                 if (AssetDatabase.DeleteAsset(projectPath))
                 {
@@ -605,6 +633,10 @@ public class ImageLoaderEditor : Editor
         {
             Debug.LogError($"Error deleting VRCUrl assets: {ex.Message}");
             return deletedCount;
+        }
+        finally
+        {
+            EditorUtility.ClearProgressBar();
         }
     }
 }
