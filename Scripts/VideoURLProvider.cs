@@ -296,6 +296,11 @@ public class VideoURLProvider : UdonSharpBehaviour
                 Debug.Log($"[VideoURLProvider] URL[{i}]: NULL");
             }
         }
+
+        // Bolt Optimization: Batch process initialization to avoid resizing arrays in loop
+        int[] indicesToAdd = new int[urlCount];
+        string[] captionsToAdd = new string[urlCount];
+        int countToAdd = 0;
         
         // For each available slot, populate with initial URLs
         for (int i = 0; i < urlCount; i++)
@@ -307,29 +312,40 @@ public class VideoURLProvider : UdonSharpBehaviour
                 bool isDuplicate = false;
                 string currentUrl = _predefinedUrlStrings[i];
                 
-                for (int j = 0; j < i; j++)
+                // Check against previously processed URLs in the batch
+                for (int k = 0; k < countToAdd; k++)
                 {
-                    // Skip null URLs
-                    if (_predefinedUrlStrings[j] == null) continue;
-                    
-                    if (_predefinedUrlStrings[j] == currentUrl)
+                    int prevIndex = indicesToAdd[k];
+                    // Skip if prevIndex is invalid (shouldn't happen)
+                    if (prevIndex >= _predefinedUrlStrings.Length) continue;
+
+                    if (_predefinedUrlStrings[prevIndex] == currentUrl)
                     {
                         isDuplicate = true;
-                        Debug.Log($"[VideoURLProvider] Skipping duplicate URL at index {i} (matches index {j}): {currentUrl}");
+                        Debug.Log($"[VideoURLProvider] Skipping duplicate URL at index {i} (matches previously added index {prevIndex}): {currentUrl}");
                         break;
                     }
                 }
                 
                 if (!isDuplicate)
                 {
-                    // Initialize activeUrlIndices array with valid URLs
-                    AddUrlIndex(i, defaultCaption);
+                    // Add to batch arrays
+                    indicesToAdd[countToAdd] = i;
+                    captionsToAdd[countToAdd] = defaultCaption;
+                    countToAdd++;
                     Debug.Log($"[VideoURLProvider] Added unique URL at index {i}: {currentUrl}");
                 }
             }
         }
+
+        // Apply batch update if any valid URLs found
+        if (countToAdd > 0)
+        {
+            AddUrlIndicesBatch(indicesToAdd, captionsToAdd, countToAdd);
+        }
         
         // Make sure we don't have any duplicate videos in the playlist
+        // (This might be redundant now but keeping for safety as per Bolt's philosophy)
         RebuildUniquePlaylist();
     }
     
@@ -1086,30 +1102,6 @@ public class VideoURLProvider : UdonSharpBehaviour
         Debug.Log($"[VideoURLProvider] Refreshed URL cache with {_predefinedUrlStrings.Length} entries");
     }
     
-    private void AddUrlIndex(int urlIndex, string caption)
-    {
-        // Extend arrays
-        int[] newIndices = new int[_activeUrlIndices.Length + 1];
-        string[] newCaptions = new string[_captions.Length + 1];
-        
-        // Copy existing data
-        for (int i = 0; i < _activeUrlIndices.Length; i++)
-        {
-            newIndices[i] = _activeUrlIndices[i];
-            newCaptions[i] = _captions[i];
-        }
-        
-        // Add new data
-        newIndices[_activeUrlIndices.Length] = urlIndex;
-        newCaptions[_captions.Length] = caption;
-        
-        // Update arrays
-        _activeUrlIndices = newIndices;
-        _captions = newCaptions;
-        
-        Debug.Log($"[VideoURLProvider] Added new video (index: {_activeUrlIndices.Length-1}, URL index: {urlIndex})");
-    }
-
     private void AddUrlIndicesBatch(int[] newIndicesToAdd, string[] newCaptionsToAdd, int countToAdd)
     {
         if (countToAdd <= 0) return;
