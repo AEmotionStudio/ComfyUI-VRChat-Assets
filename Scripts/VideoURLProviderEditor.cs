@@ -434,6 +434,13 @@ public class VideoURLProviderEditor : Editor
             // Store VRCUrl objects in the array
             for (int i = 0; i < urlCount; i++)
             {
+                if (i % 5 == 0 || i == urlCount - 1)
+                {
+                    EditorUtility.DisplayProgressBar("Generating Assets",
+                        $"Creating VRCUrl asset {i + 1}/{urlCount}",
+                        (float)i / urlCount);
+                }
+
                 try
                 {
                     string url = _fetchedUrls[i];
@@ -523,6 +530,10 @@ public class VideoURLProviderEditor : Editor
             Debug.LogError($"Error generating VRCUrl data: {ex}");
             Debug.LogException(ex);
         }
+        finally
+        {
+            EditorUtility.ClearProgressBar();
+        }
 
         // Force the inspector to repaint
         Repaint();
@@ -546,8 +557,16 @@ public class VideoURLProviderEditor : Editor
             // Get all .asset files in the directory
             string[] assetFiles = Directory.GetFiles(absolutePath, "*.asset");
 
-            foreach (string file in assetFiles)
+            for (int i = 0; i < assetFiles.Length; i++)
             {
+                string file = assetFiles[i];
+                if (i % 10 == 0)
+                {
+                    EditorUtility.DisplayProgressBar("Deleting Assets",
+                        $"Processing file {i + 1}/{assetFiles.Length}",
+                        (float)i / assetFiles.Length);
+                }
+
                 // Convert to project-relative path
                 string projectPath = "Assets" + file.Substring(Application.dataPath.Length).Replace('\\', '/');
 
@@ -575,6 +594,10 @@ public class VideoURLProviderEditor : Editor
         {
             Debug.LogError($"Error deleting VRCUrl assets: {ex.Message}");
             return deletedCount;
+        }
+        finally
+        {
+            EditorUtility.ClearProgressBar();
         }
     }
 
