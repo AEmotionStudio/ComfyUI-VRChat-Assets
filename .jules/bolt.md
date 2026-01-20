@@ -11,3 +11,7 @@
 ## 2024-10-25 - [VRCUrl Interop Caching]
 **Learning:** `VRCUrl.Get()` is an expensive interop call. Calling it inside loops (e.g., for string matching) causes frame drops in VRChat.
 **Action:** Cache `VRCUrl` string values into a native `string[]` array at startup (`Start`) and use the cached array for all runtime comparisons.
+
+## 2024-05-23 - [Batch vs Iterative Initialization]
+**Learning:** `VideoURLProvider` was using iterative array resizing (`AddUrlIndex`) during initialization, causing O(N²) memory pressure at startup. `ImageLoader` already used batching (`AddImageIndicesBatch`).
+**Action:** Refactored `VideoURLProvider` to use batch processing for initialization, aligning it with `ImageLoader`'s efficient pattern and removing the inefficient iterative method.
