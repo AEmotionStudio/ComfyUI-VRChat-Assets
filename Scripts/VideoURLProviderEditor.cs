@@ -438,7 +438,7 @@ public class VideoURLProviderEditor : Editor
                 {
                     EditorUtility.DisplayProgressBar("Generating Assets",
                         $"Creating VRCUrl asset {i + 1}/{urlCount}",
-                        (float)i / urlCount);
+                        (float)(i + 1) / urlCount);
                 }
 
                 try
@@ -564,7 +564,7 @@ public class VideoURLProviderEditor : Editor
                 {
                     EditorUtility.DisplayProgressBar("Deleting Assets",
                         $"Processing file {i + 1}/{assetFiles.Length}",
-                        (float)i / assetFiles.Length);
+                        (float)(i + 1) / assetFiles.Length);
                 }
 
                 // Convert to project-relative path

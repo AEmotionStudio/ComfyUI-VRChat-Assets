@@ -457,7 +457,7 @@ public class ImageLoaderEditor : Editor
                 {
                     EditorUtility.DisplayProgressBar("Generating Assets",
                         $"Creating VRCUrl asset {i + 1}/{urlCount}",
-                        (float)i / urlCount);
+                        (float)(i + 1) / urlCount);
                 }
 
                 string url = _fetchedUrls[i];
@@ -581,7 +581,7 @@ public class ImageLoaderEditor : Editor
                 {
                     EditorUtility.DisplayProgressBar("Deleting Assets",
                         $"Processing file {i + 1}/{assetFiles.Length}",
-                        (float)i / assetFiles.Length);
+                        (float)(i + 1) / assetFiles.Length);
                 }
 
                 // Convert to project-relative path
@@ -613,7 +613,7 @@ public class ImageLoaderEditor : Editor
                 {
                     EditorUtility.DisplayProgressBar("Deleting Assets",
                         $"Removing legacy URL asset {i + 1}/{urlAssets.Length}",
-                        (float)i / urlAssets.Length);
+                        (float)(i + 1) / urlAssets.Length);
                 }
 
                 string projectPath = "Assets" + file.Substring(Application.dataPath.Length).Replace('\\', '/');
