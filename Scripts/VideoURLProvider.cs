@@ -1079,6 +1079,9 @@ public class VideoURLProvider : UdonSharpBehaviour
                 if (url.StartsWith("http://"))
                 {
                     url = "https://" + url.Substring(7);
+
+                    // SECURITY: Force upgrade the VRCUrl object to HTTPS to prevent mixed content/MITM
+                    predefinedUrls[i] = new VRCUrl(url);
                 }
                 _predefinedUrlStrings[i] = url;
             }

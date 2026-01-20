@@ -17,3 +17,8 @@
 **Vulnerability:** Configuration sources (text files with URLs) could be loaded over insecure HTTP, and update checks could be configured to run too frequently (DoS risk).
 **Learning:** Security controls applied to *content* (images/videos) must also apply to the *configuration sources* that dictate that content. Rate limiting is essential for automated polling mechanisms.
 **Prevention:** Enforce HTTPS at the config loading stage. Clamp polling intervals to a safe minimum (e.g., 5 seconds).
+
+## 2025-05-21 - Protocol Mismatch in Object Wrappers vs. Internal Logic
+**Vulnerability:** The `ImageLoader` and `VideoURLProvider` scripts validated and upgraded URLs to HTTPS in their string cache for comparisons, but failed to update the actual `VRCUrl` objects used for the download/playback requests. This meant the code *looked* secure (validating strings) but *acted* insecurely (requesting HTTP), creating a false sense of security and leaving users vulnerable to MITM attacks.
+**Learning:** Validating a shadow copy (cache) of data does not secure the source data. When using object wrappers (like `VRCUrl`), modifying the extracted value does not modify the object itself. Security upgrades must be applied to the actual objects used for operations.
+**Prevention:** Explicitly replace or upgrade the source objects (e.g., `predefinedUrls[i] = new VRCUrl(secureUrl)`) when sanitizing inputs, rather than just sanitizing the local variable used for logic checks.
