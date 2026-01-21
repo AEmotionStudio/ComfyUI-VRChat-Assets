@@ -81,6 +81,8 @@ public class VideoURLProvider : UdonSharpBehaviour
 
     // Cache of string values from predefinedUrls to avoid repeated .Get() calls and object access
     private string[] _predefinedUrlStrings;
+    // O(1) lookup mask for currently active URLs
+    private bool[] _activeUrlMask;
     private float _lastChangeTime = 0f;
     private bool _isChangingVideo = false;
     private bool _isVideoPlayerReady = false;
@@ -108,6 +110,11 @@ public class VideoURLProvider : UdonSharpBehaviour
 
         // Clear any existing URLs to start fresh
         _activeUrlIndices = new int[0];
+        // Reset mask if initialized
+        if (_activeUrlMask != null)
+        {
+            for (int i = 0; i < _activeUrlMask.Length; i++) _activeUrlMask[i] = false;
+        }
         _captions = new string[0];
         _currentIndex = 0;
         
@@ -176,6 +183,11 @@ public class VideoURLProvider : UdonSharpBehaviour
         // Clear any existing URLs to prevent duplicates between CDN and predefined lists
         Debug.Log("[VideoURLProvider] Clearing existing URLs to prevent duplicates");
         _activeUrlIndices = new int[0];
+        // Reset mask if initialized
+        if (_activeUrlMask != null)
+        {
+            for (int i = 0; i < _activeUrlMask.Length; i++) _activeUrlMask[i] = false;
+        }
         _captions = new string[0];
         _currentIndex = 0;
         
@@ -807,6 +819,20 @@ public class VideoURLProvider : UdonSharpBehaviour
         // Update the playlist
         _activeUrlIndices = newIndices;
         _captions = newCaptions;
+
+        // Rebuild mask from new unique indices
+        if (_activeUrlMask != null)
+        {
+            for (int i = 0; i < _activeUrlMask.Length; i++) _activeUrlMask[i] = false;
+            for (int i = 0; i < _activeUrlIndices.Length; i++)
+            {
+                int idx = _activeUrlIndices[i];
+                if (idx >= 0 && idx < _activeUrlMask.Length)
+                {
+                    _activeUrlMask[idx] = true;
+                }
+            }
+        }
         
         // Adjust current index if needed
         if (_currentIndex >= _activeUrlIndices.Length)
@@ -1026,13 +1052,11 @@ public class VideoURLProvider : UdonSharpBehaviour
             if (_predefinedUrlStrings[i] != null && _predefinedUrlStrings[i] == urlToFind)
             {
                 // Check if this URL index is already in our active indices
-                for (int j = 0; j < _activeUrlIndices.Length; j++)
+                // Bolt Optimization: Use O(1) mask check instead of O(N) loop
+                if (i < _activeUrlMask.Length && _activeUrlMask[i])
                 {
-                    if (_activeUrlIndices[j] == i)
-                    {
-                        Debug.Log($"[VideoURLProvider] URL already exists in playlist at index {j}, skipping duplicate: {urlToFind}");
-                        return -1; // Return -1 to indicate we should skip adding this duplicate
-                    }
+                    Debug.Log($"[VideoURLProvider] URL already exists in playlist at index {i}, skipping duplicate: {urlToFind}");
+                    return -1; // Return -1 to indicate we should skip adding this duplicate
                 }
                 
                 // If not already in playlist, return this index
@@ -1051,18 +1075,12 @@ public class VideoURLProvider : UdonSharpBehaviour
             if (index < _predefinedUrlStrings.Length && _predefinedUrlStrings[index] != null)
             {
                 // Check if this URL is already used
-                string newUrl = _predefinedUrlStrings[index];
-                for (int j = 0; j < _activeUrlIndices.Length; j++)
+                // Bolt Optimization: Use O(1) mask check instead of O(N) loop
+                // Note: This enforces uniqueness by Index, matching RebuildUniquePlaylist behavior
+                if (index < _activeUrlMask.Length && _activeUrlMask[index])
                 {
-                    int existingIndex = _activeUrlIndices[j];
-                    if (existingIndex < _predefinedUrlStrings.Length && _predefinedUrlStrings[existingIndex] != null)
-                    {
-                        if (_predefinedUrlStrings[existingIndex] == newUrl)
-                        {
-                            Debug.Log($"[VideoURLProvider] URL already exists in playlist, skipping duplicate: {newUrl}");
-                            return -1; // Skip adding duplicate
-                        }
-                    }
+                    Debug.Log($"[VideoURLProvider] Slot {index} already active, skipping duplicate");
+                    return -1; // Skip adding duplicate
                 }
                 
                 return index;
@@ -1081,10 +1099,12 @@ public class VideoURLProvider : UdonSharpBehaviour
         if (predefinedUrls == null)
         {
             _predefinedUrlStrings = new string[0];
+            _activeUrlMask = new bool[0];
             return;
         }
 
         _predefinedUrlStrings = new string[predefinedUrls.Length];
+        _activeUrlMask = new bool[predefinedUrls.Length];
 
         for (int i = 0; i < predefinedUrls.Length; i++)
         {
@@ -1125,8 +1145,15 @@ public class VideoURLProvider : UdonSharpBehaviour
         // Add new data
         for (int i = 0; i < countToAdd; i++)
         {
-            newActiveIndices[oldLength + i] = newIndicesToAdd[i];
+            int idx = newIndicesToAdd[i];
+            newActiveIndices[oldLength + i] = idx;
             newCaptions[oldLength + i] = newCaptionsToAdd[i];
+
+            // Update mask
+            if (idx >= 0 && idx < _activeUrlMask.Length)
+            {
+                _activeUrlMask[idx] = true;
+            }
         }
 
         // Update arrays
@@ -1143,6 +1170,16 @@ public class VideoURLProvider : UdonSharpBehaviour
         int newLength = _activeUrlIndices.Length - countToRemove;
         int[] newIndices = new int[newLength];
         string[] newCaptions = new string[newLength];
+
+        // Mark removed entries as inactive in mask
+        for (int i = 0; i < countToRemove; i++)
+        {
+            int idx = _activeUrlIndices[i];
+            if (idx >= 0 && idx < _activeUrlMask.Length)
+            {
+                _activeUrlMask[idx] = false;
+            }
+        }
         
         // Copy the newest entries (skip the oldest)
         for (int i = 0; i < newLength; i++)
@@ -1382,6 +1419,11 @@ public class VideoURLProvider : UdonSharpBehaviour
         
         // Reset active indices
         _activeUrlIndices = new int[0];
+        // Reset mask
+        if (_activeUrlMask != null)
+        {
+            for (int i = 0; i < _activeUrlMask.Length; i++) _activeUrlMask[i] = false;
+        }
         _captions = new string[0];
         _currentIndex = 0;
         
@@ -1401,6 +1443,18 @@ public class VideoURLProvider : UdonSharpBehaviour
         {
             int currentUrlIndex = _activeUrlIndices[_currentIndex];
             string currentCaption = _captions[_currentIndex];
+
+            // Update mask: Clear all active bits first
+            if (_activeUrlMask != null)
+            {
+                for (int i = 0; i < _activeUrlMask.Length; i++) _activeUrlMask[i] = false;
+
+                // Set current URL to active
+                if (currentUrlIndex >= 0 && currentUrlIndex < _activeUrlMask.Length)
+                {
+                    _activeUrlMask[currentUrlIndex] = true;
+                }
+            }
             
             // Reset to just the current URL
             _activeUrlIndices = new int[1] { currentUrlIndex };
@@ -1411,6 +1465,12 @@ public class VideoURLProvider : UdonSharpBehaviour
         }
         else
         {
+            // Update mask: Clear all active bits
+            if (_activeUrlMask != null)
+            {
+                for (int i = 0; i < _activeUrlMask.Length; i++) _activeUrlMask[i] = false;
+            }
+
             // If no current URL, clear everything
             _activeUrlIndices = new int[0];
             _captions = new string[0];

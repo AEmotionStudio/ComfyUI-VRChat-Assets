@@ -15,3 +15,7 @@
 ## 2024-05-23 - [Batch vs Iterative Initialization]
 **Learning:** `VideoURLProvider` was using iterative array resizing (`AddUrlIndex`) during initialization, causing O(N²) memory pressure at startup. `ImageLoader` already used batching (`AddImageIndicesBatch`).
 **Action:** Refactored `VideoURLProvider` to use batch processing for initialization, aligning it with `ImageLoader`'s efficient pattern and removing the inefficient iterative method.
+
+## 2024-10-26 - [O(1) Lookup Mask]
+**Learning:** Nested loops for duplicate detection (scanning `_activeUrlIndices` which involves O(N) comparisons inside an O(M) loop) scale poorly (O(N*M)). UdonSharp handles integer array lookups much faster than object/string scans.
+**Action:** Implemented a persistent `bool[] _activeUrlMask` to track active indices in O(1) time. This replaces the inner loop in `FindMatchingUrlIndex`, optimizing the entire list processing to O(N).
