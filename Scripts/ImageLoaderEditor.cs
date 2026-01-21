@@ -188,8 +188,11 @@ public class ImageLoaderEditor : Editor
         EditorGUILayout.BeginHorizontal();
 
         // Button to clear all predefined URLs
+        Color originalBackgroundColor = GUI.backgroundColor;
+        GUI.backgroundColor = new Color(1f, 0.5f, 0.5f); // Soft red
         if (GUILayout.Button(new GUIContent("Clear All Predefined URLs", "Remove all URLs from the component's list. Does not delete asset files.")))
         {
+            GUI.backgroundColor = originalBackgroundColor; // Reset immediately to avoid affecting dialog
             if (EditorUtility.DisplayDialog("Clear Predefined URLs",
                 "Are you sure you want to clear all predefined URLs? This action cannot be undone.",
                 "Yes, Clear All", "Cancel"))
@@ -215,6 +218,7 @@ public class ImageLoaderEditor : Editor
                 Repaint();
             }
         }
+        GUI.backgroundColor = originalBackgroundColor; // Reset if button not clicked
 
         EditorGUILayout.EndHorizontal();
 
@@ -222,8 +226,10 @@ public class ImageLoaderEditor : Editor
         EditorGUILayout.BeginHorizontal();
 
         // Button to delete VRCUrl assets from the folder
+        GUI.backgroundColor = new Color(1f, 0.5f, 0.5f); // Soft red
         if (GUILayout.Button(new GUIContent("Delete VRCUrl Files From Disk", "Permanently delete the generated VRCUrl asset files from the selected directory.")))
         {
+            GUI.backgroundColor = originalBackgroundColor; // Reset immediately
             if (EditorUtility.DisplayDialog("Delete VRCUrl Assets",
                 "This will permanently delete all VRCUrl files from the '" + _vrcUrlsDirectory + "' folder.\n\nThis action cannot be undone!",
                 "Yes, Delete Files", "Cancel"))
@@ -234,6 +240,7 @@ public class ImageLoaderEditor : Editor
                 Repaint();
             }
         }
+        GUI.backgroundColor = originalBackgroundColor; // Reset if button not clicked
 
         // Button to clear older URLs (with improved tooltip)
         if (GUILayout.Button(new GUIContent("Clear Runtime Cache",
