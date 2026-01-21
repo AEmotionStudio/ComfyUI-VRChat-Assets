@@ -1040,35 +1040,6 @@ public class VideoURLProvider : UdonSharpBehaviour
             }
         }
         
-        // If using generated data, we can use the cyclical assignment
-        if (useGeneratedUrlData)
-        {
-            // Use the next available predefined URL slot (cyclical)
-            // Include additionalCount to account for items currently being batched
-            int index = (_activeUrlIndices.Length + additionalCount) % urlCount;
-            
-            // Ensure the predefined URL at this index exists
-            if (index < _predefinedUrlStrings.Length && _predefinedUrlStrings[index] != null)
-            {
-                // Check if this URL is already used
-                string newUrl = _predefinedUrlStrings[index];
-                for (int j = 0; j < _activeUrlIndices.Length; j++)
-                {
-                    int existingIndex = _activeUrlIndices[j];
-                    if (existingIndex < _predefinedUrlStrings.Length && _predefinedUrlStrings[existingIndex] != null)
-                    {
-                        if (_predefinedUrlStrings[existingIndex] == newUrl)
-                        {
-                            Debug.Log($"[VideoURLProvider] URL already exists in playlist, skipping duplicate: {newUrl}");
-                            return -1; // Skip adding duplicate
-                        }
-                    }
-                }
-                
-                return index;
-            }
-        }
-        
         // Last resort: find any available predefined URL
         // REMOVED for security: preventing content spoofing.
         // If the URL is not found in the predefined list, we should NOT display a random video.
