@@ -22,3 +22,8 @@
 **Vulnerability:** The `ImageLoader` and `VideoURLProvider` scripts validated and upgraded URLs to HTTPS in their string cache for comparisons, but failed to update the actual `VRCUrl` objects used for the download/playback requests. This meant the code *looked* secure (validating strings) but *acted* insecurely (requesting HTTP), creating a false sense of security and leaving users vulnerable to MITM attacks.
 **Learning:** Validating a shadow copy (cache) of data does not secure the source data. When using object wrappers (like `VRCUrl`), modifying the extracted value does not modify the object itself. Security upgrades must be applied to the actual objects used for operations.
 **Prevention:** Explicitly replace or upgrade the source objects (e.g., `predefinedUrls[i] = new VRCUrl(secureUrl)`) when sanitizing inputs, rather than just sanitizing the local variable used for logic checks.
+
+## 2025-05-22 - Prevent Content Spoofing via Fallback Logic
+**Vulnerability:** `FindMatchingUrlIndex` contained a fallback mechanism that blindly mapped unknown URLs from external lists to existing, unrelated `VRCUrl` slots when `useGeneratedUrlData` was enabled. This allowed external configuration to apply arbitrary captions to pre-approved images, creating a spoofing vulnerability.
+**Learning:** Convenience features (like "auto-mapping" or "cyclic assignment" for unmatched items) often undermine strict allowlist enforcement. "Fail Closed" means if an exact match isn't found, the operation must fail, not guess.
+**Prevention:** Remove fallback logic that bypasses exact matching. Ensure that lookups against an allowlist return an error or empty result if the specific item is not found.
