@@ -22,3 +22,8 @@
 **Vulnerability:** The `ImageLoader` and `VideoURLProvider` scripts validated and upgraded URLs to HTTPS in their string cache for comparisons, but failed to update the actual `VRCUrl` objects used for the download/playback requests. This meant the code *looked* secure (validating strings) but *acted* insecurely (requesting HTTP), creating a false sense of security and leaving users vulnerable to MITM attacks.
 **Learning:** Validating a shadow copy (cache) of data does not secure the source data. When using object wrappers (like `VRCUrl`), modifying the extracted value does not modify the object itself. Security upgrades must be applied to the actual objects used for operations.
 **Prevention:** Explicitly replace or upgrade the source objects (e.g., `predefinedUrls[i] = new VRCUrl(secureUrl)`) when sanitizing inputs, rather than just sanitizing the local variable used for logic checks.
+
+## 2025-05-27 - Removal of Legacy "Cyclical" Fallback
+**Vulnerability:** A "cyclical assignment" fallback logic was retained behind a flag (`useGeneratedUrlData`), effectively re-enabling the previously identified Content Spoofing vulnerability. This allowed unrelated images to be displayed with arbitrary captions if the exact URL match failed.
+**Learning:** When removing a vulnerability (like a fallback), ensure all variants of that logic are removed, including those hidden behind flags or legacy modes. Security fixes should be comprehensive and not leave "backdoors" for specific configurations.
+**Prevention:** Remove the `useGeneratedUrlData` fallback block entirely to enforce strict Allowlist matching in all cases.

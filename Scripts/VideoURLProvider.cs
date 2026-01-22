@@ -968,8 +968,7 @@ public class VideoURLProvider : UdonSharpBehaviour
             if (string.IsNullOrEmpty(urlStr)) continue;
             
             // Find matching slot in predefined URLs
-            // Pass tempCount to handle cyclical assignment correctly during batch processing
-            int matchingUrlIndex = FindMatchingUrlIndex(urlStr, tempCount);
+            int matchingUrlIndex = FindMatchingUrlIndex(urlStr);
             
             // Check the return value appropriately
             if (matchingUrlIndex >= 0)
@@ -1027,7 +1026,7 @@ public class VideoURLProvider : UdonSharpBehaviour
         }
     }
     
-    private int FindMatchingUrlIndex(string urlToFind, int additionalCount = 0)
+    private int FindMatchingUrlIndex(string urlToFind)
     {
         // Exit early if we don't have predefined URLs
         if (_predefinedUrlStrings == null || _predefinedUrlStrings.Length == 0)
@@ -1064,32 +1063,11 @@ public class VideoURLProvider : UdonSharpBehaviour
             }
         }
         
-        // If using generated data, we can use the cyclical assignment
-        if (useGeneratedUrlData)
-        {
-            // Use the next available predefined URL slot (cyclical)
-            // Include additionalCount to account for items currently being batched
-            int index = (_activeUrlIndices.Length + additionalCount) % urlCount;
-            
-            // Ensure the predefined URL at this index exists
-            if (index < _predefinedUrlStrings.Length && _predefinedUrlStrings[index] != null)
-            {
-                // Check if this URL is already used
-                // Bolt Optimization: Use O(1) mask check instead of O(N) loop
-                // Note: This enforces uniqueness by Index, matching RebuildUniquePlaylist behavior
-                if (index < _activeUrlMask.Length && _activeUrlMask[index])
-                {
-                    Debug.Log($"[VideoURLProvider] Slot {index} already active, skipping duplicate");
-                    return -1; // Skip adding duplicate
-                }
-                
-                return index;
-            }
-        }
-        
         // Last resort: find any available predefined URL
         // REMOVED for security: preventing content spoofing.
         // If the URL is not found in the predefined list, we should NOT display a random video.
+        // SECURITY: Removed cyclical fallback to prevent content spoofing.
+        // If the URL in the text file doesn't match a baked URL, it will be ignored.
         
         return -2; // No suitable index found
     }
