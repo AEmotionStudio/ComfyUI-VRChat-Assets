@@ -968,8 +968,7 @@ public class VideoURLProvider : UdonSharpBehaviour
             if (string.IsNullOrEmpty(urlStr)) continue;
             
             // Find matching slot in predefined URLs
-            // Pass tempCount to handle cyclical assignment correctly during batch processing
-            int matchingUrlIndex = FindMatchingUrlIndex(urlStr, tempCount);
+            int matchingUrlIndex = FindMatchingUrlIndex(urlStr);
             
             // Check the return value appropriately
             if (matchingUrlIndex >= 0)
@@ -1027,7 +1026,7 @@ public class VideoURLProvider : UdonSharpBehaviour
         }
     }
     
-    private int FindMatchingUrlIndex(string urlToFind, int additionalCount = 0)
+    private int FindMatchingUrlIndex(string urlToFind)
     {
         // Exit early if we don't have predefined URLs
         if (_predefinedUrlStrings == null || _predefinedUrlStrings.Length == 0)

@@ -311,7 +311,7 @@ public class ImageLoader : UdonSharpBehaviour
             }
             
             // Find matching slots
-            int matchingUrlIndex = FindMatchingUrlIndex(urlStr, tempCount);
+            int matchingUrlIndex = FindMatchingUrlIndex(urlStr);
             if (matchingUrlIndex >= 0)
             {
                 // Optimized O(1) duplicate checks using boolean masks
@@ -439,7 +439,7 @@ public class ImageLoader : UdonSharpBehaviour
         return "";
     }
     
-    private int FindMatchingUrlIndex(string urlToFind, int additionalCount = 0)
+    private int FindMatchingUrlIndex(string urlToFind)
     {
         // Exit early if we don't have predefined URLs
         if (_predefinedUrlStrings == null || _predefinedUrlStrings.Length == 0)
