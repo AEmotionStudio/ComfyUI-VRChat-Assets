@@ -60,6 +60,11 @@ public class ImageLoader : UdonSharpBehaviour
     // O(1) lookup mask for currently active URLs
     private bool[] _activeUrlMask;
 
+    // Bolt Optimization: Track the last found index to optimize sequential searches
+    private int _searchHintIndex = -1;
+    // Bolt Optimization: Disable hint if duplicates exist to ensure strict "first-match" behavior
+    private bool _hasDuplicateUrls = false;
+
     // Current texture reference
     private Texture2D _currentTexture;
     private Material _originalMaterial;
@@ -291,6 +296,9 @@ public class ImageLoader : UdonSharpBehaviour
         // Temporary mask to check for duplicates within the current batch
         bool[] tempMask = new bool[_activeUrlMask.Length];
 
+        // Bolt Optimization: Reset search hint before processing new list
+        _searchHintIndex = -1;
+
         Debug.Log($"Processing URL list with {lines.Length} lines");
         
         // Process each line (URL)
@@ -447,12 +455,30 @@ public class ImageLoader : UdonSharpBehaviour
             Debug.LogError("No predefined URLs available!");
             return -1;
         }
+
+        // Bolt Optimization: Optimistic check for sequential access (O(1) best case)
+        // If the list is sorted/sequential (common case), the next URL will likely be at the next index.
+        // SAFEGUARD: Only use optimization if no duplicates exist, otherwise we must scan linearly to find the FIRST occurrence.
+        if (!_hasDuplicateUrls)
+        {
+            int candidateIndex = _searchHintIndex + 1;
+            if (candidateIndex >= 0 && candidateIndex < _predefinedUrlStrings.Length)
+            {
+                if (_predefinedUrlStrings[candidateIndex] != null && _predefinedUrlStrings[candidateIndex] == urlToFind)
+                {
+                    _searchHintIndex = candidateIndex;
+                    return candidateIndex;
+                }
+            }
+        }
         
         // First try to find an exact match
         for (int i = 0; i < _predefinedUrlStrings.Length; i++)
         {
             if (_predefinedUrlStrings[i] != null && _predefinedUrlStrings[i] == urlToFind)
             {
+                // Bolt Optimization: Update hint when found
+                _searchHintIndex = i;
                 return i;
             }
         }
@@ -483,11 +509,13 @@ public class ImageLoader : UdonSharpBehaviour
         {
             _predefinedUrlStrings = new string[0];
             _activeUrlMask = new bool[0];
+            _hasDuplicateUrls = false;
             return;
         }
 
         _predefinedUrlStrings = new string[predefinedUrls.Length];
         _activeUrlMask = new bool[predefinedUrls.Length];
+        _hasDuplicateUrls = false;
 
         for (int i = 0; i < predefinedUrls.Length; i++)
         {
@@ -505,6 +533,26 @@ public class ImageLoader : UdonSharpBehaviour
                 _predefinedUrlStrings[i] = url;
             }
         }
+
+        // Bolt Optimization: Check for duplicates to decide if we can use the search hint safely
+        // (O(N^2) but only runs once at startup with small N)
+        for (int i = 0; i < _predefinedUrlStrings.Length; i++)
+        {
+            string u1 = _predefinedUrlStrings[i];
+            if (string.IsNullOrEmpty(u1)) continue;
+
+            for (int j = i + 1; j < _predefinedUrlStrings.Length; j++)
+            {
+                if (u1 == _predefinedUrlStrings[j])
+                {
+                    _hasDuplicateUrls = true;
+                    Debug.LogWarning("Duplicate URLs detected in ImageLoader. Search optimization disabled to maintain strict ordering.");
+                    break;
+                }
+            }
+            if (_hasDuplicateUrls) break;
+        }
+
         Debug.Log($"Refreshed URL cache with {_predefinedUrlStrings.Length} entries");
     }
 

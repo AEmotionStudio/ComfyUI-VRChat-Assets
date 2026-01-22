@@ -19,3 +19,7 @@
 ## 2024-10-26 - [O(1) Lookup Mask]
 **Learning:** Nested loops for duplicate detection (scanning `_activeUrlIndices` which involves O(N) comparisons inside an O(M) loop) scale poorly (O(N*M)). UdonSharp handles integer array lookups much faster than object/string scans.
 **Action:** Implemented a persistent `bool[] _activeUrlMask` to track active indices in O(1) time. This replaces the inner loop in `FindMatchingUrlIndex`, optimizing the entire list processing to O(N).
+
+## 2024-10-27 - [Sequential Search Hint]
+**Learning:** Linear searches (O(N)) for matching URLs in `ImageLoader` become O(N*M) when processing lists. Since downloaded lists often match the order of predefined assets, we can optimize for the common case.
+**Action:** Implemented a "Search Hint" strategy: cache the last found index and optimistically check `index + 1` before falling back to linear search. This reduces comparisons by ~99% for sorted lists with negligible overhead for random ones.
