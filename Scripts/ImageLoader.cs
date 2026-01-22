@@ -60,6 +60,9 @@ public class ImageLoader : UdonSharpBehaviour
     // O(1) lookup mask for currently active URLs
     private bool[] _activeUrlMask;
 
+    // Bolt Optimization: Track the last found index to optimize sequential searches
+    private int _searchHintIndex = -1;
+
     // Current texture reference
     private Texture2D _currentTexture;
     private Material _originalMaterial;
@@ -291,6 +294,9 @@ public class ImageLoader : UdonSharpBehaviour
         // Temporary mask to check for duplicates within the current batch
         bool[] tempMask = new bool[_activeUrlMask.Length];
 
+        // Bolt Optimization: Reset search hint before processing new list
+        _searchHintIndex = -1;
+
         Debug.Log($"Processing URL list with {lines.Length} lines");
         
         // Process each line (URL)
@@ -447,12 +453,26 @@ public class ImageLoader : UdonSharpBehaviour
             Debug.LogError("No predefined URLs available!");
             return -1;
         }
+
+        // Bolt Optimization: Optimistic check for sequential access (O(1) best case)
+        // If the list is sorted/sequential (common case), the next URL will likely be at the next index.
+        int candidateIndex = _searchHintIndex + 1;
+        if (candidateIndex >= 0 && candidateIndex < _predefinedUrlStrings.Length)
+        {
+            if (_predefinedUrlStrings[candidateIndex] != null && _predefinedUrlStrings[candidateIndex] == urlToFind)
+            {
+                _searchHintIndex = candidateIndex;
+                return candidateIndex;
+            }
+        }
         
         // First try to find an exact match
         for (int i = 0; i < _predefinedUrlStrings.Length; i++)
         {
             if (_predefinedUrlStrings[i] != null && _predefinedUrlStrings[i] == urlToFind)
             {
+                // Bolt Optimization: Update hint when found
+                _searchHintIndex = i;
                 return i;
             }
         }
