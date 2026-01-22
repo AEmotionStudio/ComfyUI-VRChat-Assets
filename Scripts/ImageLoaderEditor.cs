@@ -161,7 +161,25 @@ public class ImageLoaderEditor : Editor
 
         if (GUILayout.Button(new GUIContent("Browse...", "Select a folder in your project to store the generated VRCUrl assets."), GUILayout.Width(80)))
         {
-            string selectedPath = EditorUtility.OpenFolderPanel("Select VRCUrls Directory", "Assets", "");
+            // Try to use the current directory as start path
+            string defaultPath = "Assets";
+            if (!string.IsNullOrEmpty(_vrcUrlsDirectory))
+            {
+                // Handle "Assets" or "Assets/..." paths
+                string relativePath = _vrcUrlsDirectory;
+                if (relativePath.StartsWith("Assets/"))
+                    relativePath = relativePath.Substring(7);
+                else if (relativePath == "Assets")
+                    relativePath = "";
+
+                string absPath = Path.Combine(Application.dataPath, relativePath);
+                if (Directory.Exists(absPath))
+                {
+                    defaultPath = absPath;
+                }
+            }
+
+            string selectedPath = EditorUtility.OpenFolderPanel("Select VRCUrls Directory", defaultPath, "");
             if (!string.IsNullOrEmpty(selectedPath))
             {
                 // Convert absolute path to project-relative path
@@ -169,11 +187,35 @@ public class ImageLoaderEditor : Editor
                 {
                     _vrcUrlsDirectory = "Assets" + selectedPath.Substring(Application.dataPath.Length);
                     EditorPrefs.SetString(PrefsKey, _vrcUrlsDirectory);
+
+                    // Clear focus to update the field
+                    GUI.FocusControl(null);
+                    Repaint();
                 }
                 else
                 {
                     EditorUtility.DisplayDialog("Invalid Folder", "Please select a folder inside your Unity project.", "OK");
                 }
+            }
+        }
+
+        if (GUILayout.Button(new GUIContent("Open", "Open this folder in your file browser"), GUILayout.Width(50)))
+        {
+            string relativePath = _vrcUrlsDirectory;
+            if (relativePath.StartsWith("Assets/"))
+                relativePath = relativePath.Substring(7);
+            else if (relativePath == "Assets")
+                relativePath = "";
+
+            string absPath = Path.Combine(Application.dataPath, relativePath);
+
+            if (Directory.Exists(absPath))
+            {
+                EditorUtility.RevealInFinder(absPath);
+            }
+            else
+            {
+                EditorUtility.DisplayDialog("Folder Not Found", $"The directory '{_vrcUrlsDirectory}' does not exist.", "OK");
             }
         }
         EditorGUILayout.EndHorizontal();
