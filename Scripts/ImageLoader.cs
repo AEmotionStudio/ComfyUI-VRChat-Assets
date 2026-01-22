@@ -457,22 +457,9 @@ public class ImageLoader : UdonSharpBehaviour
             }
         }
         
-        // If using generated data, we can use the cyclical assignment
-        if (useGeneratedUrlData)
-        {
-            // Use the next available predefined URL slot (cyclical)
-            int index = (_activeUrlIndices.Length + additionalCount) % urlCount;
-            
-            // Ensure the predefined URL at this index exists
-            if (index < _predefinedUrlStrings.Length && _predefinedUrlStrings[index] != null)
-            {
-                return index;
-            }
-        }
-        
-        // Last resort: find any available predefined URL
-        // REMOVED for security: preventing content spoofing.
         // If the URL is not found in the predefined list, we should NOT display a random image.
+        // SECURITY: Removed cyclical fallback to prevent content spoofing.
+        // If the URL in the text file doesn't match a baked URL, it will be ignored.
         
         return -1;
     }
