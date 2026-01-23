@@ -379,32 +379,45 @@ public class ImageLoader : UdonSharpBehaviour
         string url = "";
 
         // Format 1: "URL" (direct URL)
+        // Optimization: Fast path for direct URLs
         if (line.StartsWith("http"))
         {
             url = line;
         }
-        // Format 2: "filename.png: URL" (colon separated)
-        else if (line.Contains(":"))
+        else
         {
-            int colonPos = line.IndexOf(":");
-            if (colonPos >= 0 && colonPos < line.Length - 1)
+            // Format 2: "filename.png: URL" (colon separated)
+            // Optimization: Remove double scan (Contains+IndexOf) and Substring allocation
+            int colonPos = line.IndexOf(':');
+            bool foundColonUrl = false;
+
+            if (colonPos >= 0)
             {
-                string afterColon = line.Substring(colonPos + 1).Trim();
-                if (afterColon.StartsWith("http"))
+                // We have a colon. Check if the part after it looks like a URL.
+                // Find first non-whitespace after colon
+                int startPos = colonPos + 1;
+                int len = line.Length;
+                while (startPos < len && char.IsWhiteSpace(line[startPos])) {
+                    startPos++;
+                }
+
+                // Check if it starts with "http" at this position
+                if (startPos < len && line.IndexOf("http", startPos) == startPos)
                 {
-                    url = afterColon;
+                    url = line.Substring(startPos).Trim();
+                    foundColonUrl = true;
                 }
             }
-        }
-        
-        // Format 3: "n. filename.png: URL" (numbered list)
-        // Only if we haven't found a URL yet
-        if (string.IsNullOrEmpty(url))
-        {
-            int httpIndex = line.IndexOf("http");
-            if (httpIndex >= 0)
+
+            // Format 3: "n. filename.png: URL" (numbered list) or fallback
+            // Only if we haven't found a URL yet
+            if (!foundColonUrl)
             {
-                url = line.Substring(httpIndex).Trim();
+                int httpIndex = line.IndexOf("http");
+                if (httpIndex >= 0)
+                {
+                    url = line.Substring(httpIndex).Trim();
+                }
             }
         }
 
