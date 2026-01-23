@@ -27,3 +27,8 @@
 **Vulnerability:** A "cyclical assignment" fallback logic was retained behind a flag (`useGeneratedUrlData`), effectively re-enabling the previously identified Content Spoofing vulnerability. This allowed unrelated images to be displayed with arbitrary captions if the exact URL match failed.
 **Learning:** When removing a vulnerability (like a fallback), ensure all variants of that logic are removed, including those hidden behind flags or legacy modes. Security fixes should be comprehensive and not leave "backdoors" for specific configurations.
 **Prevention:** Remove the `useGeneratedUrlData` fallback block entirely to enforce strict Allowlist matching in all cases.
+
+## 2025-05-30 - Prevent SSRF via Editor Scripts
+**Vulnerability:** `ImageLoaderEditor` and `VideoURLProviderEditor` accepted arbitrary URL schemes (like `file://`) in the "GitHub Raw URL" field, allowing attackers (or malicious configs) to read local files via `WebClient`.
+**Learning:** Developer tools running in trusted environments (like Unity Editor) are often overlooked vectors for SSRF/LFI if they process external input without validation. `WebClient` supports `file:` URI scheme by default.
+**Prevention:** Explicitly validate the URL scheme (allow only `http` and `https`) before passing user input to networking APIs, even in Editor scripts.

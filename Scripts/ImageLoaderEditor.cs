@@ -352,6 +352,16 @@ public class ImageLoaderEditor : Editor
 
     private void FetchUrlsFromGitHub(ImageLoader imageLoader)
     {
+        // Security check: Ensure URL uses HTTP/HTTPS to prevent SSRF (file:// access)
+        string urlToCheck = imageLoader.githubRawUrlString.Trim();
+        if (!urlToCheck.StartsWith("http://", StringComparison.OrdinalIgnoreCase) && !urlToCheck.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            _statusMessage = "Error: Invalid URL scheme. Only 'http://' and 'https://' are allowed.";
+            _messageType = MessageType.Error;
+            Repaint();
+            return;
+        }
+
         _isLoading = true;
         _statusMessage = "Fetching URLs from GitHub...";
         _messageType = MessageType.Info;
