@@ -376,6 +376,16 @@ public class VideoURLProviderEditor : Editor
 
     private void FetchUrlsFromGitHub(VideoURLProvider videoProvider)
     {
+        // Security check: Ensure URL uses HTTP/HTTPS to prevent SSRF (file:// access)
+        string urlToCheck = videoProvider.githubRawUrlString.Trim();
+        if (!urlToCheck.StartsWith("http://") && !urlToCheck.StartsWith("https://"))
+        {
+            _statusMessage = "Error: Invalid URL scheme. Only 'http://' and 'https://' are allowed.";
+            _messageType = MessageType.Error;
+            Repaint();
+            return;
+        }
+
         _isLoading = true;
         _statusMessage = "Fetching URLs from GitHub...";
         _messageType = MessageType.Info;
