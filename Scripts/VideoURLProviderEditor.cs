@@ -336,7 +336,15 @@ public class VideoURLProviderEditor : Editor
         if (_fetchedUrls.Count > 0)
         {
             EditorGUILayout.Space();
+            EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField($"Fetched URLs: {_fetchedUrls.Count}", EditorStyles.boldLabel);
+
+            if (GUILayout.Button(new GUIContent("Copy All", "Copy all fetched URLs to clipboard"), GUILayout.Width(70)))
+            {
+                EditorGUIUtility.systemCopyBuffer = string.Join("\n", _fetchedUrls);
+                Debug.Log($"Copied {_fetchedUrls.Count} URLs to clipboard.");
+            }
+            EditorGUILayout.EndHorizontal();
 
             // Show a scrollable list of the first few URLs
             EditorGUILayout.BeginVertical(GUI.skin.box);

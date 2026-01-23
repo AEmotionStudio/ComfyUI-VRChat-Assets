@@ -7,3 +7,7 @@
 ## 2024-05-24 - Actionable Verification
 **Learning:** When a tool generates or manages files in a specific directory, users often need to verify the output immediately. Providing a path text field is not enough.
 **Action:** Add an "Open" or "Reveal" button next to directory selection fields that opens the OS file explorer to that location. This closes the loop between configuration and verification.
+
+## 2024-05-25 - Copy to Verify
+**Learning:** For tools that fetch and parse lists of data, limited UI previews (e.g., first 5 items) are insufficient for full verification.
+**Action:** Provide a "Copy to Clipboard" button to allow users to verify the entire dataset in their preferred external text editor.
