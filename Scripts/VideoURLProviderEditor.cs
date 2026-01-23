@@ -378,7 +378,7 @@ public class VideoURLProviderEditor : Editor
     {
         // Security check: Ensure URL uses HTTP/HTTPS to prevent SSRF (file:// access)
         string urlToCheck = videoProvider.githubRawUrlString.Trim();
-        if (!urlToCheck.StartsWith("http://") && !urlToCheck.StartsWith("https://"))
+        if (!urlToCheck.StartsWith("http://", StringComparison.OrdinalIgnoreCase) && !urlToCheck.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
         {
             _statusMessage = "Error: Invalid URL scheme. Only 'http://' and 'https://' are allowed.";
             _messageType = MessageType.Error;
