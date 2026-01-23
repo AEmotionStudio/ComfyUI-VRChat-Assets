@@ -23,3 +23,7 @@
 ## 2024-10-27 - [Sequential Search Hint]
 **Learning:** Linear searches (O(N)) for matching URLs in `ImageLoader` become O(N*M) when processing lists. Since downloaded lists often match the order of predefined assets, we can optimize for the common case.
 **Action:** Implemented a "Search Hint" strategy: cache the last found index and optimistically check `index + 1` before falling back to linear search. This reduces comparisons by ~99% for sorted lists with negligible overhead for random ones.
+
+## 2024-11-20 - [Allocation-Free String Scanning]
+**Learning:** `string.Substring()` allocates new memory on every call. Using it inside loops just to check for prefixes (e.g., `line.Substring(pos).StartsWith("http")`) generates significant garbage.
+**Action:** Refactored URL extraction to use `line.IndexOf("http", startPos) == startPos`. This performs an in-place check without allocating intermediate strings, reducing GC pressure during playlist parsing.
