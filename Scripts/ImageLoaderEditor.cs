@@ -55,8 +55,11 @@ public class ImageLoaderEditor : Editor
 
     public override void OnInspectorGUI()
     {
-        // Draw the default inspector
-        DrawDefaultInspector();
+        // Update the serialized object
+        serializedObject.Update();
+
+        // Draw properties excluding predefinedUrls to prevent cluttering the top of the inspector
+        DrawPropertiesExcluding(serializedObject, "predefinedUrls");
 
         // Get the target
         ImageLoader imageLoader = (ImageLoader)target;
@@ -347,6 +350,18 @@ public class ImageLoaderEditor : Editor
         }
 
         // Apply changes
+        serializedObject.ApplyModifiedProperties();
+
+        // Draw the predefinedUrls at the bottom
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("Generated Data", EditorStyles.boldLabel);
+
+        serializedObject.Update();
+        SerializedProperty predefinedUrlsProp = serializedObject.FindProperty("predefinedUrls");
+        if (predefinedUrlsProp != null)
+        {
+            EditorGUILayout.PropertyField(predefinedUrlsProp, true);
+        }
         serializedObject.ApplyModifiedProperties();
     }
 

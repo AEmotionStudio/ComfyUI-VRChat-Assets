@@ -11,3 +11,7 @@
 ## 2024-05-25 - Copy to Verify
 **Learning:** For tools that fetch and parse lists of data, limited UI previews (e.g., first 5 items) are insufficient for full verification.
 **Action:** Provide a "Copy to Clipboard" button to allow users to verify the entire dataset in their preferred external text editor.
+
+## 2024-05-27 - Data Density vs. Action Priority
+**Learning:** When a component generates a large amount of data (like a URL list), displaying that data via the default inspector can push critical configuration and action buttons off-screen, forcing users to scroll excessively.
+**Action:** Use `DrawPropertiesExcluding` to hide the large data fields from the default inspector flow, and manually draw them at the bottom of the inspector (or in a collapsed foldout). This prioritizes the controls that users need to interact with most frequently.

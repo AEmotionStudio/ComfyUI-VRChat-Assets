@@ -76,7 +76,8 @@ public class VideoURLProviderEditor : Editor
         }
 
         // Draw the rest of the default inspector (without redrawing the fields we've already drawn)
-        DrawPropertiesExcluding(serializedObject, new string[] { "unityVideoPlayer", "avproVideoPlayer", "urlInputField", "loopPlaylist", "autoAdvance" });
+        // Also excluding predefinedUrls to prevent cluttering the middle of the inspector
+        DrawPropertiesExcluding(serializedObject, new string[] { "unityVideoPlayer", "avproVideoPlayer", "urlInputField", "loopPlaylist", "autoAdvance", "predefinedUrls" });
 
         // Add a space
         EditorGUILayout.Space();
@@ -367,6 +368,18 @@ public class VideoURLProviderEditor : Editor
         }
 
         // Apply changes
+        serializedObject.ApplyModifiedProperties();
+
+        // Draw the predefinedUrls at the bottom
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("Generated Data", EditorStyles.boldLabel);
+
+        serializedObject.Update();
+        SerializedProperty predefinedUrlsProp = serializedObject.FindProperty("predefinedUrls");
+        if (predefinedUrlsProp != null)
+        {
+            EditorGUILayout.PropertyField(predefinedUrlsProp, true);
+        }
         serializedObject.ApplyModifiedProperties();
 
         // Display active player type (if any)
