@@ -4,7 +4,7 @@
 **Prevention:** Ensure that lookup functions return an error code or null when a match is not found, rather than returning a default value that could be misinterpreted as the requested item.
 
 ## 2024-05-23 - Enforce HTTPS for External Resources
-**Vulnerability:** External configuration lists could supply `http://` URLs, potentially allowing mixed content or insecure data transmission if the allowlist check was lenient.
+**Vulnerability:** External configuration lists could supply `http://` URLs, potentially allowing mixed content or insecure data transmission if the allowed check was lenient.
 **Learning:** Even if the allowed list is secure, runtime inputs should be sanitized to match the expected security standard. Implicitly trusting the protocol provided by external sources can lead to security downgrades.
 **Prevention:** Automatically upgrade `http://` to `https://` at the ingestion point (parsing logic) to ensure all runtime URLs comply with security standards before they are used or compared against allowed lists.
 
@@ -32,3 +32,8 @@
 **Vulnerability:** `ImageLoaderEditor` and `VideoURLProviderEditor` accepted arbitrary URL schemes (like `file://`) in the "GitHub Raw URL" field, allowing attackers (or malicious configs) to read local files via `WebClient`.
 **Learning:** Developer tools running in trusted environments (like Unity Editor) are often overlooked vectors for SSRF/LFI if they process external input without validation. `WebClient` supports `file:` URI scheme by default.
 **Prevention:** Explicitly validate the URL scheme (allow only `http` and `https`) before passing user input to networking APIs, even in Editor scripts.
+
+## 2025-05-31 - Enforce HTTPS in Editor-Time Asset Generation
+**Vulnerability:** The `VideoURLProviderEditor` script allowed `http://` URLs to be fetched and baked into persistent `VRCUrl` assets, relying solely on runtime components to upgrade them. This created a window where insecure assets existed in the project, potentially leading to mixed content if runtime logic failed or was bypassed.
+**Learning:** Security sanitation should happen as early as possible in the pipeline (Shift Left). Relying on runtime fixes for static data creates technical debt and potential security gaps if the runtime component is modified or replaced.
+**Prevention:** Enforce security standards (like HTTPS upgrades) at the data generation stage (Editor scripts) to ensure that all baked assets are secure by default, independent of runtime logic.
