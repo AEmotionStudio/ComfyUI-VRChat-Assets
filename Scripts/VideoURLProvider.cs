@@ -8,6 +8,7 @@ using VRC.Udon.Common.Interfaces;
 using VRC.SDK3.Video.Components;
 using VRC.SDK3.Video.Components.AVPro;
 using VRC.SDK3.Video.Components.Base;
+using VRC.SDK3.Data;
 using System.Collections.Generic;
 
 [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
@@ -83,6 +84,10 @@ public class VideoURLProvider : UdonSharpBehaviour
     private string[] _predefinedUrlStrings;
     // O(1) lookup mask for currently active URLs
     private bool[] _activeUrlMask;
+    // Bolt Optimization: Track the last found index to optimize sequential searches
+    private int _searchHintIndex = -1;
+    // Bolt Optimization: Disable hint if duplicates exist to ensure strict "first-match" behavior
+    private bool _hasDuplicateUrls = false;
     private float _lastChangeTime = 0f;
     private bool _isChangingVideo = false;
     private bool _isVideoPlayerReady = false;
@@ -956,6 +961,9 @@ public class VideoURLProvider : UdonSharpBehaviour
         string[] tempCaptions = new string[lines.Length];
         int tempCount = 0;
         
+        // Bolt Optimization: Reset search hint before processing new list
+        _searchHintIndex = -1;
+
         Debug.Log($"[VideoURLProvider] Processing {lines.Length} lines from URL list");
         
         // Process each line (URL)
@@ -1044,6 +1052,28 @@ public class VideoURLProvider : UdonSharpBehaviour
             }
         }
 
+        // Bolt Optimization: Optimistic check for sequential access (O(1) best case)
+        if (!_hasDuplicateUrls)
+        {
+            int candidateIndex = _searchHintIndex + 1;
+            if (candidateIndex >= 0 && candidateIndex < _predefinedUrlStrings.Length)
+            {
+                if (_predefinedUrlStrings[candidateIndex] != null && _predefinedUrlStrings[candidateIndex] == urlToFind)
+                {
+                    // Check if this URL index is already in our active indices
+                    if (candidateIndex < _activeUrlMask.Length && _activeUrlMask[candidateIndex])
+                    {
+                        // Duplicate found via hint. Return -1 to skip.
+                        _searchHintIndex = candidateIndex;
+                        return -1;
+                    }
+
+                    _searchHintIndex = candidateIndex;
+                    return candidateIndex;
+                }
+            }
+        }
+
         // First try to find an exact match in predefined URLs
         for (int i = 0; i < _predefinedUrlStrings.Length; i++)
         {
@@ -1059,6 +1089,8 @@ public class VideoURLProvider : UdonSharpBehaviour
                 }
                 
                 // If not already in playlist, return this index
+                // Bolt Optimization: Update hint when found
+                _searchHintIndex = i;
                 return i;
             }
         }
@@ -1078,11 +1110,13 @@ public class VideoURLProvider : UdonSharpBehaviour
         {
             _predefinedUrlStrings = new string[0];
             _activeUrlMask = new bool[0];
+            _hasDuplicateUrls = false;
             return;
         }
 
         _predefinedUrlStrings = new string[predefinedUrls.Length];
         _activeUrlMask = new bool[predefinedUrls.Length];
+        _hasDuplicateUrls = false;
 
         for (int i = 0; i < predefinedUrls.Length; i++)
         {
@@ -1100,6 +1134,23 @@ public class VideoURLProvider : UdonSharpBehaviour
                 _predefinedUrlStrings[i] = url;
             }
         }
+
+        // Bolt Optimization: Check for duplicates (O(N) using DataDictionary)
+        DataDictionary seenUrls = new DataDictionary();
+        for (int i = 0; i < _predefinedUrlStrings.Length; i++)
+        {
+            string u1 = _predefinedUrlStrings[i];
+            if (string.IsNullOrEmpty(u1)) continue;
+
+            if (seenUrls.ContainsKey(u1))
+            {
+                _hasDuplicateUrls = true;
+                Debug.LogWarning("Duplicate URLs detected in VideoURLProvider. Search optimization disabled.");
+                break;
+            }
+            seenUrls.Add(u1, i);
+        }
+
         Debug.Log($"[VideoURLProvider] Refreshed URL cache with {_predefinedUrlStrings.Length} entries");
     }
     
