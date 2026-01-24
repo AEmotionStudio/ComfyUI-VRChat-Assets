@@ -313,6 +313,9 @@ public class VideoURLProviderEditor : Editor
                 "This will clear all downloaded URLs from memory except the currently displayed one.\n\nThis affects only the runtime state, not your predefined URLs configuration.",
                 "Clear Cache", "Cancel"))
             {
+                // Save any pending changes before executing logic
+                serializedObject.ApplyModifiedProperties();
+
                 // Call the method on the target
                 UdonSharpEditorUtility.GetBackingUdonBehaviour(videoProvider).SendCustomEvent("ClearOlderUrls");
 

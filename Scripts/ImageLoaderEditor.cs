@@ -295,6 +295,9 @@ public class ImageLoaderEditor : Editor
                 "This will clear all downloaded images from memory except the currently displayed one.\n\nThis affects only the runtime state, not your predefined URLs configuration.",
                 "Clear Cache", "Cancel"))
             {
+                // Save any pending changes before executing logic
+                serializedObject.ApplyModifiedProperties();
+
                 // Call the method on the target
                 UdonSharpEditorUtility.GetBackingUdonBehaviour(imageLoader).SendCustomEvent("ClearOlderUrls");
 
