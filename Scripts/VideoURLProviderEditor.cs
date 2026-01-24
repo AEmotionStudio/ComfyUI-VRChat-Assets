@@ -416,7 +416,7 @@ public class VideoURLProviderEditor : Editor
                     string trimmedLine = line.Trim();
 
                     // Skip empty lines, comments, and headers
-                    if (string.IsNullOrEmpty(trimmedLine) || trimmedLine.StartsWith("#") || !trimmedLine.Contains("https://"))
+                    if (string.IsNullOrEmpty(trimmedLine) || trimmedLine.StartsWith("#") || !trimmedLine.Contains("http"))
                         continue;
 
                     // Extract the URL from the line (support various formats)
