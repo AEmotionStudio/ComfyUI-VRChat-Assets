@@ -670,14 +670,15 @@ public class VideoURLProviderEditor : Editor
 
     private string ExtractUrlFromLine(string line)
     {
+        string url = "";
+
         // Direct URL format
         if (line.StartsWith("http"))
         {
-            return line;
+            url = line;
         }
-
         // Title: URL format
-        if (line.Contains(":"))
+        else if (line.Contains(":"))
         {
             int colonPos = line.IndexOf(":");
             if (colonPos >= 0 && colonPos < line.Length - 1)
@@ -685,22 +686,32 @@ public class VideoURLProviderEditor : Editor
                 string afterColon = line.Substring(colonPos + 1).Trim();
                 if (afterColon.StartsWith("http"))
                 {
-                    return afterColon;
+                    url = afterColon;
                 }
             }
         }
 
-        // Find any URL in the line
-        int httpIndex = line.IndexOf("http");
-        if (httpIndex >= 0)
+        // Find any URL in the line if not found yet
+        if (string.IsNullOrEmpty(url))
         {
-            string substr = line.Substring(httpIndex);
-            // Attempt to find the end of the URL by looking for whitespace
-            int spaceIndex = substr.IndexOf(' ');
-            return spaceIndex > 0 ? substr.Substring(0, spaceIndex) : substr;
+            int httpIndex = line.IndexOf("http");
+            if (httpIndex >= 0)
+            {
+                string substr = line.Substring(httpIndex);
+                // Attempt to find the end of the URL by looking for whitespace
+                int spaceIndex = substr.IndexOf(' ');
+                url = spaceIndex > 0 ? substr.Substring(0, spaceIndex) : substr;
+            }
         }
 
-        return "";
+        // Security enhancement: Enforce HTTPS
+        // Automatically upgrade http:// to https:// to prevent mixed content/insecure loads
+        if (!string.IsNullOrEmpty(url) && url.StartsWith("http://"))
+        {
+            url = "https://" + url.Substring(7);
+        }
+
+        return url;
     }
 
     private string ExtractCaptionFromLine(string line)
